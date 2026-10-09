@@ -1,0 +1,49 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# Environments
+.venv/
+venv/
+.env
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Model weights
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# Training artifacts
+checkpoints/*
+!checkpoints/.gitkeep
+
+outputs/*
+!outputs/.gitkeep
+
+logs/*
+!logs/.gitkeep
+
+data/*
+!data/.gitkeep
+
+# Experiment tracking
+wandb/
+runs/
+
+# Recorded trajectories
+*.mp4
+*.avi
+*.pkl
+*.npz
+*.npy
