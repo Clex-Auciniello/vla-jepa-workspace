@@ -1,0 +1,3 @@
+[submodule "external/VLA-JEPA"]
+	path = external/VLA-JEPA
+	url = https://github.com/Clex-Auciniello/VLA-JEPA.git
