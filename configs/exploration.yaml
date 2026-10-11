@@ -1,0 +1,79 @@
+# Seed globale dell'esplorazione: letto una sola volta all'avvio del client.
+# Usare lo STESSO oggetto random.Random(seed) per walker e motion sampler.
+seed: 42
+
+# Numero di waypoint nominali DISTINTI in ogni traiettoria.
+# Modificabile tra episodi senza riavviare il client.
+random_walker:
+  num_waypoints: 5
+
+# Probabilita' per waypoint (0.20 = 20%).
+# Rotation: massimo due eventi per traiettoria; il secondo annulla il primo.
+# Gripper: OPEN -> CLOSED -> OPEN al massimo; mai una seconda chiusura.
+motion_sampler:
+  rotation_prob:
+    empty:
+      PICK: 0.20
+      TRANSFER: 0.20
+    occupied:
+      PICK: 0.05
+      TRANSFER: 0.10
+
+  gripper_close_prob:
+    empty:
+      PICK: 0.15
+      TRANSFER: 0.15
+    occupied:
+      PICK: 0.15
+      TRANSFER: 0.05
+
+  gripper_reopen_prob:
+    empty:
+      PICK: 0.15
+      TRANSFER: 0.15
+    occupied:
+      PICK: 0.15
+      TRANSFER: 0.05
+
+  # Perturbazioni in metri, uguali per EMPTY e OCCUPIED.
+  xy_jitter_m: 0.010              # XY: +/- 1 cm, SENZA clamp (margini fisici necessari)
+  z_jitter_pick_up_m: 0.005       # Z0: [0, +0.5 cm] (solo salita)
+  z_jitter_transfer_m: 0.005      # Livelli intermedi: +/- 0.5 cm
+  z_jitter_top_down_m: 0.005      # Ultimo livello: [-0.5, 0] cm (solo discesa)
+
+  max_abs_yaw_deg: 30.0           # Solo rotazione attorno a Z di base_link
+
+# Parametri per l'esecuzione, distinti dal motion sampler.
+# Con tavolo OCCUPIED i transiti ausiliari usano SEMPRE i waypoint Z1
+# nominali di workspace_grid.json.
+robot_executor:
+  # Tutti i movimenti usano GoToPose nel MoveItControllerNode esistente.
+  # SRDF: gruppo arm_tcp, TCP tcp_link.
+  ros_timeout_s: 120.0
+
+  # Action e valori ricavati dall'AIControllerNode esistente.
+  gripper_action_name: /robotiq_gripper_controller/gripper_cmd
+  gripper_open_position: 0.1
+  gripper_closed_position: 255.0
+  gripper_max_effort: 50.0
+
+# Registrazione temporanea delle due ZED per ogni episodio.
+# fps = frequenza massima desiderata; se le camere producono meno frame,
+# il recorder NON duplica le immagini per raggiungere il valore richiesto.
+trajectory_recorder:
+  fps: 15
+  front_topic: /zed_front/zed_node/rgb/color/rect/image
+  gripper_topic: /zed_gripper/zed_node/rgb/color/rect/image
+  sync_queue_size: 20
+  sync_slop_s: 0.05
+  jpeg_quality: 95
+
+# Comunicazione HTTP con il futuro server Flask (il client non importa Flask).
+# Il POST accoda l'episodio e risponde subito; NON aspettiamo il TRAINED.
+# Il tracker conta le visite subito dopo l'accettazione dell'operatore.
+# Se Flask gira in un altro container, usare un indirizzo raggiungibile da ROS.
+exploration_client:
+  server_url: http://127.0.0.1:8765
+  request_timeout_s: 30.0
+  max_queued_uploads: 3
+  min_frames: 8
