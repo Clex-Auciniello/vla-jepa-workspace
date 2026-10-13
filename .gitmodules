@@ -1,3 +1,6 @@
 [submodule "external/VLA-JEPA"]
 	path = external/VLA-JEPA
 	url = https://github.com/Clex-Auciniello/VLA-JEPA.git
+[submodule "external/lerobot"]
+	path = external/lerobot
+	url = https://github.com/ciccio42/lerobot.git
