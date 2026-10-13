@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Mapping, Sequence
 
 
-STATE_VERSION = 3
+STATE_VERSION = 4
 WORKSPACE_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_STATE_PATH = WORKSPACE_ROOT / "outputs" / "exploration_state.json"
 
@@ -95,8 +95,14 @@ class CoverageTracker:
 
         if self.state_path.exists():
             self._state = json.loads(self.state_path.read_text(encoding="utf-8"))
+            old_version = self._state.get("version")
+            if old_version == 3:
+                self._state["version"] = STATE_VERSION
+                self._state["start_visits"] = {str(wid): 0 for wid in sorted(self._ids)}
             self._validate_loaded()
             self.rng.setstate(_rng_state_from_json(self._state["rng_state"]))
+            if old_version == 3:
+                self._save()
         else:
             self._state = {
                 "version": STATE_VERSION,
@@ -104,6 +110,7 @@ class CoverageTracker:
                 "grid_hash": self._grid_hash,
                 "next_episode_number": 1,
                 "accepted_visits": {str(wid): 0 for wid in sorted(self._ids)},
+                "start_visits": {str(wid): 0 for wid in sorted(self._ids)},
                 "rng_state": _rng_state_to_json(self.rng.getstate()),
             }
             self._save()
@@ -131,6 +138,11 @@ class CoverageTracker:
             raise ValueError("accepted_visits non compatibile con la griglia")
         if any(type(count) is not int or count < 0 for count in counts.values()):
             raise ValueError("accepted_visits contiene contatori non validi")
+        starts = state.get("start_visits")
+        if not isinstance(starts, dict) or set(starts) != {str(wid) for wid in self._ids}:
+            raise ValueError("start_visits non compatibile con la griglia")
+        if any(type(count) is not int or count < 0 for count in starts.values()):
+            raise ValueError("start_visits contiene contatori non validi")
         try:
             random.Random().setstate(_rng_state_from_json(state.get("rng_state")))
         except (TypeError, ValueError) as exc:
@@ -142,6 +154,11 @@ class CoverageTracker:
         return {int(wid): count for wid, count in self._state["accepted_visits"].items()}
 
     @property
+    def start_visits(self) -> dict[int, int]:
+        """Conteggi separati dei waypoint nominali usati come START."""
+        return {int(wid): count for wid, count in self._state["start_visits"].items()}
+
+    @property
     def next_episode_number(self) -> int:
         return self._state["next_episode_number"]
 
@@ -150,7 +167,7 @@ class CoverageTracker:
         """ID che il client mostra prima della registrazione, es. E00018."""
         return f"E{self.next_episode_number:05d}"
 
-    def accept_episode(self, episode_id: str, waypoint_ids: Sequence[int]) -> None:
+    def accept_episode(self, episode_id: str, waypoint_ids: Sequence[int], start_waypoint_id: int) -> None:
         """Aggiorna le visite subito dopo l'accettazione dell'operatore.
 
         Non attende il training: i 5 ID sono quelli nominali dei waypoint
@@ -162,15 +179,20 @@ class CoverageTracker:
                 or len(selected) != len(set(selected)) or set(selected) - self._ids):
             raise ValueError("waypoint_ids deve contenere ID nominali validi e distinti")
 
+        if type(start_waypoint_id) is not int or start_waypoint_id not in self._ids:
+            raise ValueError("start_waypoint_id non valido")
+        if start_waypoint_id in selected:
+            raise ValueError("Lo START non deve comparire tra i waypoint esplorativi")
         for wid in selected:
             self._state["accepted_visits"][str(wid)] += 1
+        self._state["start_visits"][str(start_waypoint_id)] += 1
         self._state["next_episode_number"] += 1
         self._save()
 
     def discard_episode(self, episode_id: str) -> None:
         """Scarta la traiettoria; salva soltanto l'RNG avanzato.
 
-        L'ID rimane lo stesso e accepted_visits non cambia.
+        L'ID rimane lo stesso; accepted_visits e start_visits non cambiano.
         """
         self._check_episode_id(episode_id)
         self._save()

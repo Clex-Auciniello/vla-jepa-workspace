@@ -11,14 +11,45 @@ import math
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Protocol, Sequence
+from types import SimpleNamespace
+from typing import Callable, Literal, Protocol, Sequence
 
 from vla_jepa_online.exploration.motion_sampler import MotionPlan
+from vla_jepa_online.exploration.geometry_utils import build_linear_waypoints
 
-# [x, y, z, qx, qy, qz, qw] in base_link, for tcp_link.
-# This is the GoToPose after GoHome, NOT the GoHome joint configuration.
-INITIAL_POSE = (
-    -0.15552094619366708, 0.34869994018501943, 0.1532803451753288,
+
+MICRO_STEP_M = 0.02  # ScriptController min_step, no YAML changes required
+
+
+def _transfer_motion_label(previous, destination) -> str | None:
+    """Canonical instruction for a nominal grid transition (local X/Y/Z axes).
+
+    X increases left-to-right, Y back-to-front, Z bottom-to-top. Deliberately
+    ignore Cartesian jitter: all micro-steps of one transition share a label.
+    """
+    if previous is None:
+        return None
+    # Keep one concise, atomic instruction per nominal 3D transfer.
+    # Word order is forward/backward -> up/down -> right/left, so examples
+    # include "up-right", "forward-right" and "forward-up-right".
+    directions = []
+    for delta, positive, negative in (
+        (destination.j - previous.j, "forward", "backward"),
+        (destination.k - previous.k, "up", "down"),
+        (destination.i - previous.i, "right", "left"),
+    ):
+        if delta > 0:
+            directions.append(positive)
+        elif delta < 0:
+            directions.append(negative)
+    if not directions:
+        return None
+    return "Move the gripper " + "-".join(directions)
+
+
+
+# Same TCP orientation used by the baseline, but no fixed XYZ initial pose.
+INITIAL_QUATERNION_XYZW = (
     0.9994452044624775, 0.03161651380119412,
     0.0021438049655468088, 0.010251021036213035,
 )
@@ -40,6 +71,8 @@ class RobotCommand:
     description: str
     target: PoseTarget | None = None
     gripper_closed: bool | None = None
+    segment_id: int | None = None
+    motion_label: str | None = None
 
 
 @dataclass(frozen=True)
@@ -95,17 +128,29 @@ class RobotExecutor:
     def __init__(self, backend: RobotBackend, config: RobotExecutorConfig):
         self.backend, self.cfg = backend, config
 
-    def prepare(self) -> PoseTarget:
-        """Called on first operator ENTER, before recording starts."""
+    def prepare_home(self) -> None:
+        """HOME + gripper OPEN before the first episode or after manual recovery."""
         if hasattr(self.backend, "check_interfaces"):
             self.backend.check_interfaces()
         self.backend.move_home()
-        initial = PoseTarget(tuple(INITIAL_POSE[:3]), _unit_quaternion(INITIAL_POSE[3:]))
-        self.backend.move_to_pose(initial)
         self.backend.set_gripper(closed=False)
+
+    def move_to_start(self, start_waypoint: dict) -> PoseTarget:
+        """Reach a NOMINAL grid waypoint with the recorder still off."""
+        target = PoseTarget(
+            tuple(float(v) for v in start_waypoint["position"]),
+            _unit_quaternion(INITIAL_QUATERNION_XYZW),
+        )
+        self.backend.move_to_pose(target)
         return self.backend.get_tcp_pose()
 
-    def build_commands(self, motion_plan: MotionPlan, start_pose: PoseTarget, *, grid: dict) -> ExecutionPlan:
+    def return_home(self) -> None:
+        """Return HOME after recording has stopped; ready gripper for next START."""
+        self.backend.move_home()
+        self.backend.set_gripper(closed=False)
+
+    def build_commands(self, motion_plan: MotionPlan, start_pose: PoseTarget, *, grid: dict,
+                       start_waypoint: dict | None = None) -> ExecutionPlan:
         """Pure geometry. OCCUPIED detours: Zx->Z1->Z0 or Z0->Z1->Z1->Z0.
 
         Nominal XY indices (i,j), not perturbed Cartesian XY, determine alignment.
@@ -139,13 +184,16 @@ class RobotExecutor:
             return tuple(float(v) for v in point["position"])
 
         occupied = motion_plan.table_mode == "occupied"
-        initial_q = _unit_quaternion(INITIAL_POSE[3:])
+        initial_q = _unit_quaternion(INITIAL_QUATERNION_XYZW)
         commands: list[RobotCommand] = []
         current_pose = start_pose
         yaw = 0.0
-        previous = None
+        previous = (SimpleNamespace(i=int(start_waypoint["i"]), j=int(start_waypoint["j"]),
+                                    k=int(start_waypoint["k"]), waypoint_id=int(start_waypoint["id"]))
+                    if start_waypoint is not None else None)
 
-        def move(xyz: Sequence[float], description: str, *, yaw_deg: float | None = None):
+        def move(xyz: Sequence[float], description: str, *, yaw_deg: float | None = None,
+                 segment_id: int | None = None, motion_label: str | None = None):
             nonlocal current_pose
             orientation = _yaw_in_base(initial_q, yaw if yaw_deg is None else yaw_deg)
             target = PoseTarget(tuple(float(v) for v in xyz), orientation)
@@ -154,24 +202,37 @@ class RobotExecutor:
                 _unit_quaternion(current_pose.quaternion_xyzw), orientation
             ))) >= 1.0 - 1e-10
             if math.dist(current_pose.xyz, target.xyz) > 1e-6 or not same_orientation:
-                commands.append(RobotCommand("pose", description, target=target))
+                commands.append(RobotCommand(
+                    "pose", description, target=target,
+                    segment_id=segment_id, motion_label=motion_label,
+                ))
             current_pose = target
 
-        for step in steps:
+        for segment_id, step in enumerate(steps, start=1):
             target_xyz = step.target_position  # perturbed point
+            transfer_label = _transfer_motion_label(previous, step)
             if occupied and step.k == 0:
                 if previous is not None and previous.k == 0:
-                    move(z1(previous), "Z1 nominale sopra la partenza")
-                    move(z1(step), "Z1 nominale sopra la destinazione")
+                    move(z1(previous), "Z1 nominale sopra la partenza",
+                         segment_id=segment_id, motion_label=transfer_label)
+                    move(z1(step), "Z1 nominale sopra la destinazione",
+                         segment_id=segment_id, motion_label=transfer_label)
                 elif previous is None or (previous.i, previous.j) != (step.i, step.j):
-                    move(z1(step), "Z1 nominale sopra la destinazione")
-                move(target_xyz, f"PICK {step.waypoint_id}")
+                    move(z1(step), "Z1 nominale sopra la destinazione",
+                         segment_id=segment_id, motion_label=transfer_label)
+                move(target_xyz, f"PICK {step.waypoint_id}",
+                     segment_id=segment_id, motion_label=transfer_label)
             else:
-                move(target_xyz, f"Waypoint {step.waypoint_id}")
+                move(target_xyz, f"Waypoint {step.waypoint_id}",
+                     segment_id=segment_id, motion_label=transfer_label)
 
             if step.rotate_here:
-                yaw = float(step.yaw_offset_after_deg)
-                move(target_xyz, f"Yaw al waypoint {step.waypoint_id}")
+                new_yaw = float(step.yaw_offset_after_deg)
+                rotation_label = ("Rotate the gripper counterclockwise" if new_yaw > yaw
+                                  else "Rotate the gripper clockwise")
+                yaw = new_yaw
+                move(target_xyz, f"Yaw al waypoint {step.waypoint_id}",
+                     segment_id=segment_id, motion_label=rotation_label)
             elif abs(float(step.yaw_offset_after_deg) - yaw) > 0.0011:
                 raise ValueError("Yaw cambia senza evento rotate_here")
 
@@ -179,25 +240,53 @@ class RobotExecutor:
                 commands.append(RobotCommand(
                     "gripper", f"{'CLOSE' if step.gripper_closed_after else 'OPEN'} al waypoint {step.waypoint_id}",
                     gripper_closed=bool(step.gripper_closed_after),
+                    segment_id=segment_id,
+                    motion_label=("Close the gripper" if step.gripper_closed_after
+                                  else "Open the gripper"),
                 ))
             previous = step
 
         return ExecutionPlan(start_pose, tuple(commands), waypoint_ids)
 
-    def execute(self, plan: ExecutionPlan) -> tuple[int, ...]:
-        """Called after recorder starts. Success means ALL commands succeeded.
+    def execute(self, plan: ExecutionPlan, *, on_step: Callable[..., None] | None = None) -> tuple[int, ...]:
+        """Execute interpolated GoToPose micro-steps, with optional capture trigger.
 
-        On any error, stop issuing commands, invalidate episode; no retry.
-        Protective stop recovery is left entirely to the operator/tablet.
+        Each complete pose segment contains its exact final waypoint. Call on_step
+        only AFTER each successful GoToPose or gripper command. No automatic
+        recovery is attempted after failure; the entire episode is invalidated.
+        Callback metadata identifies the nominal transfer segment (1..N) and
+        its directional instruction, or the explicit rotation/gripper action.
         """
+        current_pose = plan.start_pose
         try:
             for command in plan.commands:
                 if command.kind == "pose":
                     assert command.target is not None
-                    self.backend.move_to_pose(command.target)
+                    target = command.target
+                    pure_rotation = (math.dist(current_pose.xyz, target.xyz) <= 1e-9)
+                    for wp in build_linear_waypoints(
+                        current_pose.xyz, current_pose.quaternion_xyzw,
+                        target.xyz, target.quaternion_xyzw, MICRO_STEP_M,
+                    ):
+                        micro_target = PoseTarget(
+                            tuple(float(v) for v in wp.position),
+                            _unit_quaternion(wp.orientation),
+                        )
+                        self.backend.move_to_pose(micro_target)
+                        current_pose = micro_target
+                        if on_step is not None:
+                            on_step("rotate" if pure_rotation else "move",
+                                    segment_id=command.segment_id,
+                                    motion_label=command.motion_label)
                 else:
                     assert command.gripper_closed is not None
                     self.backend.set_gripper(command.gripper_closed)
+                    if on_step is not None:
+                        on_step("gripper_close" if command.gripper_closed else "gripper_open",
+                                segment_id=command.segment_id,
+                                motion_label=(command.motion_label or
+                                              ("Close the gripper" if command.gripper_closed
+                                               else "Open the gripper")))
         except Exception as exc:
             raise RobotExecutionError(f"Esplorazione interrotta: {exc}") from exc
         return plan.waypoint_ids
@@ -257,7 +346,7 @@ class ROSMoveItBackend:
     def get_tcp_pose(self) -> PoseTarget:
         """Get latest available base_link -> tcp_link TF, allowing brief TF delays.
 
-        Used only to read the start pose after the confirmed initial GoToPose.
+        Used only to read the pose after reaching the nominal START waypoint.
         No arbitrary 2-second TF-age check: a stationary robot may legitimately
         have temporarily delayed TF updates. Missing TF still fails after 5 s.
         """

@@ -79,6 +79,17 @@ class RandomWalker:
     def from_yaml(cls, path: str | Path) -> "RandomWalker":
         return cls(RandomWalkerConfig.from_yaml(path))
 
+    def sample_start(self, grid: Mapping, start_visits: Mapping[int, int], *, rng: random.Random) -> int:
+        """Seleziona START sull'intera griglia con pesi 1/(1+start_visits)."""
+        ids = [wp["id"] for wp in grid["waypoints"]]
+        if not ids or any(type(wid) is not int for wid in ids) or len(ids) != len(set(ids)):
+            raise ValueError("Griglia con ID iniziali non validi")
+        if any(wid not in ids or type(count) is not int or count < 0
+               for wid, count in start_visits.items()):
+            raise ValueError("start_visits non validi")
+        weights = [1.0 / (1.0 + start_visits.get(wid, 0)) for wid in ids]
+        return rng.choices(ids, weights=weights, k=1)[0]
+
     def sample(
         self,
         grid: Mapping,
@@ -86,6 +97,7 @@ class RandomWalker:
         *,
         table_mode: str,
         rng: random.Random,
+        exclude_id: int | None = None,
     ) -> WalkPlan:
         """Campiona N waypoint senza reinserimento.
 
@@ -109,13 +121,17 @@ class RandomWalker:
             ids.append(wp["id"])
         if len(ids) != len(set(ids)):
             raise ValueError("La griglia contiene ID waypoint duplicati")
+        if exclude_id is not None:
+            if exclude_id not in ids:
+                raise ValueError("START non presente nella griglia")
+            ids.remove(exclude_id)
         if self.cfg.num_waypoints > len(ids):
             raise ValueError(
                 f"Richiesti {self.cfg.num_waypoints} waypoint, "
                 f"ma la griglia ne contiene soltanto {len(ids)}"
             )
 
-        valid_ids = set(ids)
+        valid_ids = {wp["id"] for wp in grid["waypoints"]}
         for wid, count in accepted_visits.items():
             if wid not in valid_ids:
                 raise ValueError(f"Conteggio riferito a waypoint inesistente: {wid}")

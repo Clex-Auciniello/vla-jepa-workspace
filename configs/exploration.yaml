@@ -49,7 +49,7 @@ motion_sampler:
 robot_executor:
   # Tutti i movimenti usano GoToPose nel MoveItControllerNode esistente.
   # SRDF: gruppo arm_tcp, TCP tcp_link.
-  ros_timeout_s: 120.0
+  ros_timeout_s: 300.0
 
   # Action e valori ricavati dall'AIControllerNode esistente.
   gripper_action_name: /robotiq_gripper_controller/gripper_cmd

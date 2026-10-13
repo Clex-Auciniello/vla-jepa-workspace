@@ -31,7 +31,7 @@ from vla_jepa_online.exploration.robot_executor import (
     ROSMoveItBackend, RobotExecutionError, RobotExecutor, RobotExecutorConfig,
 )
 from vla_jepa_online.exploration.trajectory_recorder import (
-    RecordedEpisode, TrajectoryRecorder, TrajectoryRecorderConfig,
+    FrameCaptureError, RecordedEpisode, TrajectoryRecorder, TrajectoryRecorderConfig,
 )
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -70,6 +70,7 @@ class UploadTask:
     table_mode: str
     waypoint_ids: tuple[int, ...]
     episode: RecordedEpisode
+    start_waypoint_id: int
 
 
 @dataclass(frozen=True)
@@ -105,6 +106,9 @@ class FlaskTrainingTransport:
                     "index": frame.index,
                     "front_stamp_ns": frame.front_stamp_ns,
                     "gripper_stamp_ns": frame.gripper_stamp_ns,
+                    "event": frame.event,
+                    "segment_id": frame.segment_id,
+                    "motion_label": frame.motion_label,
                     "front_path": front,
                     "gripper_path": wrist,
                 })
@@ -113,7 +117,9 @@ class FlaskTrainingTransport:
                 "episode_id": task.episode_id,
                 "table_mode": task.table_mode,
                 "waypoint_ids": list(task.waypoint_ids),
-                "recording_fps_limit": task.episode.fps,
+                "start_waypoint_id": task.start_waypoint_id,
+                "recording_fps_limit": task.episode.fps,  # null: sampling on motion steps
+                "sampling_mode": "motion_step",
                 "frames": manifest_frames,
             }, separators=(",", ":")))
         return buffer.getvalue()
@@ -256,6 +262,7 @@ class ExplorationClient:
 
     def run(self) -> None:
         mode: str | None = None
+        home_ready = False
         self.sender.start()
         self.report("Client VLA-JEPA: upload/training asincroni via Flask, RGB solo in RAM.")
         try:
@@ -266,34 +273,54 @@ class ExplorationClient:
                     break
                 episode_id = self.tracker.next_episode_id
                 self.report(f"\n=== {episode_id} | {mode.upper()} ===")
-                if not self._enter("GoHome -> posa iniziale -> gripper OPEN"):
-                    break
-                try:
-                    start_pose = self.robot.prepare()
-                except RobotExecutionError as exc:
-                    self.tracker.discard_episode(episode_id)
-                    if not self._recover(exc):
+                if not home_ready:
+                    if not self._enter("GoHome -> gripper OPEN"):
                         break
-                    continue
+                    try:
+                        self.robot.prepare_home()
+                        home_ready = True
+                    except RobotExecutionError as exc:
+                        self.tracker.discard_episode(episode_id)
+                        if not self._recover(exc):
+                            break
+                        continue
 
+                start_id = self.walker.sample_start(
+                    self.grid, self.tracker.start_visits, rng=self.tracker.rng,
+                )
+                start_waypoint = next(w for w in self.grid["waypoints"] if w["id"] == start_id)
                 walk = self.walker.sample(
-                    self.grid, self.tracker.accepted_visits, table_mode=mode, rng=self.tracker.rng,
+                    self.grid, self.tracker.accepted_visits, table_mode=mode,
+                    rng=self.tracker.rng, exclude_id=start_id,
                 )
                 motion = self.sampler.sample(
                     self.grid, walk.waypoint_ids, table_mode=mode,
                     rng=self.tracker.rng, initially_closed=False,
                 )
-                plan = self.robot.build_commands(motion, start_pose, grid=self.grid)
-                self.report("Waypoint nominali: " + ", ".join(map(str, plan.waypoint_ids)))
-                if not self._enter(f"Prepara tavolo {mode.upper()}; avvia registrazione ed esecuzione"):
+                self.report(f"START nominale: {start_id}")
+                self.report("Waypoint nominali: " + ", ".join(map(str, walk.waypoint_ids)))
+                if not self._enter(f"Prepara tavolo {mode.upper()}; vai a START e avvia registrazione"):
                     self.tracker.discard_episode(episode_id)
                     break
 
-                self.recorder.start()
+                try:
+                    start_pose = self.robot.move_to_start(start_waypoint)  # REC OFF
+                except RobotExecutionError as exc:
+                    home_ready = False
+                    self.tracker.discard_episode(episode_id)
+                    if not self._recover(exc):
+                        break
+                    continue
+                plan = self.robot.build_commands(motion, start_pose, grid=self.grid,
+                                                 start_waypoint=start_waypoint)
+
+                self.recorder.start()  # REC ON only after START was reached
                 robot_error: Exception | None = None
                 try:
-                    self.robot.execute(plan)
-                except RobotExecutionError as exc:
+                    # START and every completed micro-step/gripper event get ONE fresh pair.
+                    self.recorder.capture_step(event="start")
+                    self.robot.execute(plan, on_step=self.recorder.capture_step)
+                except (RobotExecutionError, FrameCaptureError) as exc:
                     robot_error = exc
                 finally:
                     episode = self.recorder.stop()
@@ -303,8 +330,18 @@ class ExplorationClient:
                             f"durata {episode.duration_s:.2f}s")
                 self._drain_training_events()
                 if robot_error is not None:
+                    home_ready = False
                     self.tracker.discard_episode(episode_id)
                     if not self._recover(robot_error):
+                        break
+                    continue
+                try:
+                    self.robot.return_home()  # REC OFF; never on a failed movement
+                    home_ready = True
+                except RobotExecutionError as exc:
+                    home_ready = False
+                    self.tracker.discard_episode(episode_id)
+                    if not self._recover(exc):
                         break
                     continue
                 if len(episode.frames) < self.min_frames:
@@ -325,8 +362,8 @@ class ExplorationClient:
                                 "(non il training) prima di accettare questo episodio.")
                     time.sleep(0.5)
                     self._drain_training_events()
-                self.tracker.accept_episode(episode_id, plan.waypoint_ids)
-                self.sender.enqueue(UploadTask(episode_id, mode, plan.waypoint_ids, episode))
+                self.tracker.accept_episode(episode_id, plan.waypoint_ids, start_id)
+                self.sender.enqueue(UploadTask(episode_id, mode, plan.waypoint_ids, episode, start_id))
                 self.report(f"{episode_id} ACCETTATO: visite aggiornate e POST in coda. "
                             f"Prossimo ID: {self.tracker.next_episode_id}. "
                             "Puoi iniziare subito una nuova registrazione.")

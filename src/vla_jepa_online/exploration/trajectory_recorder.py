@@ -1,14 +1,14 @@
-"""Record synchronized front + wrist RGB camera frames for an exploration episode.
+"""Event-triggered, synchronized front + wrist RGB captures, JPEG in RAM.
 
-No robot commands, frame-window selection, disk writes, or training logic.
-The client must spin the supplied rclpy Node in a separate executor thread.
-Frames are numbered 1..N; ROS camera stamps are used to synchronize and rate-limit
-recording, not as the user-facing frame numbers. Original stamps are preserved.
+Camera callbacks always run, but an RGB pair is saved ONLY for an explicit
+capture_step() request after robot movement/gripper completion. Each request
+waits for a fresh synchronized pair with ROS stamps after the trigger.
 """
 
 from __future__ import annotations
 
 import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -40,13 +40,16 @@ class TrajectoryRecorderConfig:
 
 @dataclass(frozen=True)
 class RecordedFrame:
-    """One synchronized pair; JPEG bytes can be decoded to RGB on the server."""
+    """One synchronized pair, with optional per-transition prompt metadata."""
 
     index: int  # 1-based, consecutive, independent of the ROS stamp
     front_jpeg: bytes
     gripper_jpeg: bytes
     front_stamp_ns: int
     gripper_stamp_ns: int
+    event: str = "move"
+    segment_id: int | None = None
+    motion_label: str | None = None
 
     @property
     def sync_error_ms(self) -> float:
@@ -55,7 +58,7 @@ class RecordedFrame:
 
 @dataclass(frozen=True)
 class RecordedEpisode:
-    fps: float  # requested maximum recording rate, not guaranteed observed FPS
+    fps: float | None  # None in event-triggered mode: no temporal FPS limit
     frames: tuple[RecordedFrame, ...]
 
     @property
@@ -81,11 +84,16 @@ def decode_rgb_pair(frame: RecordedFrame):
     return decode(frame.front_jpeg), decode(frame.gripper_jpeg)
 
 
-class TrajectoryRecorder:
-    """RAM-only recorder using two synchronized ROS Image subscriptions.
+class FrameCaptureError(RuntimeError):
+    """No valid post-trigger synchronized camera pair was captured in time."""
 
-    The ROS executor must keep spinning while the robot executes GoToPose.
-    start()/stop()/clear() are safe to call from the client thread.
+
+class TrajectoryRecorder:
+    """Event-triggered RAM recorder with synchronized ROS Image subscriptions.
+
+    The ROS executor must spin in another thread. The caller invokes
+    capture_step() only after GoToPose / gripper completion; start/stop delimit
+    the episode, but do not enable any automatic frame buffering.
     """
 
     def __init__(self, node, config: TrajectoryRecorderConfig):
@@ -99,14 +107,16 @@ class TrajectoryRecorder:
         self.cfg = config
         self.bridge = CvBridge()
         self._cv2 = cv2
-        self._lock = threading.Lock()
+        self._condition = threading.Condition()
         self._recording = False
         self._frames: list[RecordedFrame] = []
-        self._first_stamp_ns: int | None = None
-        self._last_slot = -1
+        self._last_stamp_ns = -1
+        self._capture_token = 0
+        self._completed_token = 0
+        self._pending: tuple[int, str, int, int | None, str | None] | None = None
+        self._encoding_token: int | None = None
         self._decode_errors = 0
 
-        # Keep subscriptions and synchronizer alive for the entire client session.
         self._front_sub = message_filters.Subscriber(
             node, Image, config.front_topic, qos_profile=qos_profile_sensor_data,
         )
@@ -115,45 +125,83 @@ class TrajectoryRecorder:
         )
         self._sync = message_filters.ApproximateTimeSynchronizer(
             [self._front_sub, self._gripper_sub],
-            queue_size=config.sync_queue_size,
-            slop=config.sync_slop_s,
+            queue_size=config.sync_queue_size, slop=config.sync_slop_s,
         )
         self._sync.registerCallback(self._on_pair)
 
     def start(self) -> None:
-        """Start a fresh episode; previously buffered data is discarded."""
-        with self._lock:
+        """Start an episode with an empty frame list; no automatic captures."""
+        with self._condition:
             if self._recording:
                 raise RuntimeError("La registrazione e' gia' attiva")
             self._frames = []
-            self._first_stamp_ns = None
-            self._last_slot = -1
+            self._last_stamp_ns = -1
             self._decode_errors = 0
+            self._pending = None
+            self._encoding_token = None
             self._recording = True
 
+    def capture_step(self, event: str = "move", *, segment_id: int | None = None,
+                     motion_label: str | None = None, timeout_s: float = 5.0) -> RecordedFrame:
+        """Block until a NEW synchronized pair recorded after this request.
+
+        Both camera header timestamps must be newer than the local ROS clock at
+        the trigger, as well as all previously saved image timestamps. This
+        avoids including a stale callback from before GoToPose completed.
+        The executor supplies segment_id and motion_label; the recorder never
+        infers directions or constructs a complete language instruction.
+        """
+        if timeout_s <= 0:
+            raise ValueError("timeout_s deve essere positivo")
+        deadline = time.monotonic() + timeout_s
+        with self._condition:
+            if not self._recording:
+                raise FrameCaptureError("Recorder non attivo")
+            if self._pending is not None:
+                raise FrameCaptureError("Un'altra cattura e' gia' in attesa")
+            self._capture_token += 1
+            token = self._capture_token
+            after_ns = max(self.node.get_clock().now().nanoseconds, self._last_stamp_ns)
+            self._pending = (token, event, after_ns, segment_id, motion_label)
+            while self._completed_token != token:
+                if not self._recording:
+                    raise FrameCaptureError("Recorder fermato durante la cattura")
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    if self._pending is not None and self._pending[0] == token:
+                        self._pending = None
+                    raise FrameCaptureError(
+                        f"Nessuna coppia RGB front/gripper nuova entro {timeout_s:.1f}s "
+                        f"dopo l'evento {event!r}"
+                    )
+                self._condition.wait(timeout=remaining)
+            return self._frames[-1]
+
     def stop(self) -> RecordedEpisode:
-        """Freeze recording and return references to the compressed RAM frames."""
-        with self._lock:
+        """Stop captures; return immutable frame references in RAM."""
+        with self._condition:
             self._recording = False
-            return RecordedEpisode(self.cfg.fps, tuple(self._frames))
+            self._pending = None
+            self._condition.notify_all()
+            return RecordedEpisode(None, tuple(self._frames))
 
     def clear(self) -> None:
-        """Release the recorder's frame references after sending or discarding."""
-        with self._lock:
+        """Release recorder frame references after stop()."""
+        with self._condition:
             if self._recording:
                 raise RuntimeError("Fermare la registrazione prima di clear()")
             self._frames = []
-            self._first_stamp_ns = None
-            self._last_slot = -1
+            self._last_stamp_ns = -1
+            self._pending = None
 
     @property
     def frame_count(self) -> int:
-        with self._lock:
+        with self._condition:
             return len(self._frames)
 
     @property
     def decode_errors(self) -> int:
-        with self._lock:
+        with self._condition:
             return self._decode_errors
 
     @staticmethod
@@ -162,28 +210,21 @@ class TrajectoryRecorder:
         return int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
 
     def _on_pair(self, front_msg, gripper_msg) -> None:
-        """Called by ApproximateTimeSynchronizer with matching ROS stamps."""
+        """ROS callback: satisfy exactly ONE pending post-trigger capture."""
         front_stamp = self._stamp_ns(front_msg)
         gripper_stamp = self._stamp_ns(gripper_msg)
         if front_stamp <= 0 or gripper_stamp <= 0:
-            # A valid ROS camera source should populate header.stamp.
             return
-        pair_stamp = (front_stamp + gripper_stamp) // 2
 
-        with self._lock:
-            if not self._recording:
+        with self._condition:
+            if not self._recording or self._pending is None or self._encoding_token is not None:
                 return
-            start_ns = self._first_stamp_ns if self._first_stamp_ns is not None else pair_stamp
-            if pair_stamp < start_ns:
+            token, event, after_ns, segment_id, motion_label = self._pending
+            if min(front_stamp, gripper_stamp) <= after_ns:
                 return
-            # Time slots cap recording to ~fps without assuming camera FPS is exact.
-            # Missing frames create gaps in slots, NOT invented duplicate frames.
-            slot = int((pair_stamp - start_ns) * self.cfg.fps / 1e9 + 0.5)
-            if slot <= self._last_slot:
-                return
+            self._encoding_token = token
 
         try:
-            # CvBridge yields RGB; OpenCV imencode expects BGR.
             front_rgb = self.bridge.imgmsg_to_cv2(front_msg, desired_encoding="rgb8")
             gripper_rgb = self.bridge.imgmsg_to_cv2(gripper_msg, desired_encoding="rgb8")
             quality = [int(self._cv2.IMWRITE_JPEG_QUALITY), self.cfg.jpeg_quality]
@@ -196,27 +237,29 @@ class TrajectoryRecorder:
             if not front_ok or not gripper_ok:
                 raise ValueError("Codifica JPEG non riuscita")
         except Exception as exc:
-            with self._lock:
+            with self._condition:
                 self._decode_errors += 1
+                if self._encoding_token == token:
+                    self._encoding_token = None
             self.node.get_logger().warning(f"Recorder: coppia RGB scartata: {exc}")
             return
 
-        with self._lock:
-            # Stop may have been called during JPEG encoding.
-            if not self._recording:
-                return
-            if self._first_stamp_ns is None:
-                self._first_stamp_ns = pair_stamp
-                slot = 0
-            else:
-                slot = int((pair_stamp - self._first_stamp_ns) * self.cfg.fps / 1e9 + 0.5)
-            if slot <= self._last_slot:
-                return
-            self._last_slot = slot
+        with self._condition:
+            if self._encoding_token == token:
+                self._encoding_token = None
+            if not self._recording or self._pending is None or self._pending[0] != token:
+                return  # timed out/stopped while JPEG was being encoded
             self._frames.append(RecordedFrame(
                 index=len(self._frames) + 1,
                 front_jpeg=front_buf.tobytes(),
                 gripper_jpeg=gripper_buf.tobytes(),
                 front_stamp_ns=front_stamp,
                 gripper_stamp_ns=gripper_stamp,
+                event=event,
+                segment_id=segment_id,
+                motion_label=motion_label,
             ))
+            self._last_stamp_ns = max(front_stamp, gripper_stamp)
+            self._completed_token = token
+            self._pending = None
+            self._condition.notify_all()
