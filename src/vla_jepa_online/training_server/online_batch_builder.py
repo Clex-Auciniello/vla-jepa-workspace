@@ -55,7 +55,14 @@ class OnlineBatchBuilderConfig:
     # e usato per il campionamento degli otto vertici: margini pixel originali
     # (left=0, top=10, right=140, bottom=90), PRIMA del resize a 224x224.
     # La camera gripper non e' croppata: nessuna geometria non verificata.
-    front_crop: CropMargins | None = CropMargins(0, 10, 140, 90)
+    # La baseline usa (top, bottom, left, right) = (0, 10, 140, 90).
+    # CropMargins richiede invece (left, top, right, bottom).
+    front_crop: CropMargins | None = CropMargins(
+        left=140,
+        top=0,
+        right=90,
+        bottom=10,
+    )
     gripper_crop: CropMargins | None = None
 
     # I nomi derivano dal checkpoint DROID/UR5e mostrato dall'utente.

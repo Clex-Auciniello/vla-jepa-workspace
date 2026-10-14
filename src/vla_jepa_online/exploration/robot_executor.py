@@ -15,7 +15,7 @@ from types import SimpleNamespace
 from typing import Callable, Literal, Protocol, Sequence
 
 from vla_jepa_online.exploration.motion_sampler import MotionPlan
-from vla_jepa_online.exploration.geometry_utils import build_linear_waypoints
+from vla_jepa_online.utils.geometry_utils import build_linear_waypoints
 
 
 MICRO_STEP_M = 0.02  # ScriptController min_step, no YAML changes required
