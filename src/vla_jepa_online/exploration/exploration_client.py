@@ -98,10 +98,12 @@ class FlaskTrainingTransport:
         manifest_frames = []
         with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_STORED) as archive:
             for frame in task.episode.frames:
-                front = f"frames/front/{frame.index:06d}.jpg"
-                wrist = f"frames/gripper/{frame.index:06d}.jpg"
-                archive.writestr(front, frame.front_jpeg)
-                archive.writestr(wrist, frame.gripper_jpeg)
+                front = f"frames/front/{frame.index:06d}.png"
+                wrist = f"frames/gripper/{frame.index:06d}.png"
+
+                archive.writestr(front, frame.front_png)
+                archive.writestr(wrist, frame.gripper_png)
+
                 manifest_frames.append({
                     "index": frame.index,
                     "front_stamp_ns": frame.front_stamp_ns,

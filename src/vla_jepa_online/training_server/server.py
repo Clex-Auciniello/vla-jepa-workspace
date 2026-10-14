@@ -775,6 +775,13 @@ def main() -> None:
         default=1e-5,
     )
 
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=1000,
+        help="Seed PyTorch, NumPy e Python per il training.",
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -807,6 +814,7 @@ def main() -> None:
                 resume_from=resume_path,
                 checkpoint_root=cfg.checkpoint_root,
                 device="cuda",
+                seed=args.seed,
                 qwen_learning_rate=args.qwen_lr,
                 predictor_learning_rate=args.predictor_lr,
             )

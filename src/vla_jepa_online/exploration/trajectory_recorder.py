@@ -20,7 +20,7 @@ class TrajectoryRecorderConfig:
     gripper_topic: str
     sync_queue_size: int
     sync_slop_s: float
-    jpeg_quality: int
+    png_compression: int
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "TrajectoryRecorderConfig":
@@ -31,8 +31,8 @@ class TrajectoryRecorderConfig:
         cfg = cls(**{name: values[name] for name in cls.__dataclass_fields__})
         if cfg.fps <= 0 or cfg.sync_queue_size < 1 or cfg.sync_slop_s <= 0:
             raise ValueError("fps, sync_queue_size e sync_slop_s devono essere positivi")
-        if not 1 <= cfg.jpeg_quality <= 100:
-            raise ValueError("jpeg_quality deve essere compreso tra 1 e 100")
+        if not 0 <= cfg.png_compression <= 9:
+            raise ValueError("png_compression deve essere tra 0 e 9")
         if not cfg.front_topic or not cfg.gripper_topic or cfg.front_topic == cfg.gripper_topic:
             raise ValueError("I topic front e gripper devono essere distinti e non vuoti")
         return cfg
@@ -43,8 +43,8 @@ class RecordedFrame:
     """One synchronized pair, with optional per-transition prompt metadata."""
 
     index: int  # 1-based, consecutive, independent of the ROS stamp
-    front_jpeg: bytes
-    gripper_jpeg: bytes
+    front_png: bytes
+    gripper_png: bytes
     front_stamp_ns: int
     gripper_stamp_ns: int
     event: str = "move"
@@ -78,10 +78,10 @@ def decode_rgb_pair(frame: RecordedFrame):
     def decode(data: bytes):
         bgr = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_COLOR)
         if bgr is None:
-            raise ValueError("JPEG frame non decodificabile")
+            raise ValueError("PNG frame non decodificabile")
         return cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
 
-    return decode(frame.front_jpeg), decode(frame.gripper_jpeg)
+    return decode(frame.front_png), decode(frame.gripper_png)
 
 
 class FrameCaptureError(RuntimeError):
@@ -227,15 +227,27 @@ class TrajectoryRecorder:
         try:
             front_rgb = self.bridge.imgmsg_to_cv2(front_msg, desired_encoding="rgb8")
             gripper_rgb = self.bridge.imgmsg_to_cv2(gripper_msg, desired_encoding="rgb8")
-            quality = [int(self._cv2.IMWRITE_JPEG_QUALITY), self.cfg.jpeg_quality]
+            # PNG lossless: stesso contenuto RGB originale, senza perdita JPEG.
+            # OpenCV richiede i canali BGR per la codifica.
+            compression = [
+                int(self._cv2.IMWRITE_PNG_COMPRESSION),
+                self.cfg.png_compression,
+            ]
+
             front_ok, front_buf = self._cv2.imencode(
-                ".jpg", self._cv2.cvtColor(front_rgb, self._cv2.COLOR_RGB2BGR), quality,
+                ".png",
+                self._cv2.cvtColor(front_rgb, self._cv2.COLOR_RGB2BGR),
+                compression,
             )
+
             gripper_ok, gripper_buf = self._cv2.imencode(
-                ".jpg", self._cv2.cvtColor(gripper_rgb, self._cv2.COLOR_RGB2BGR), quality,
+                ".png",
+                self._cv2.cvtColor(gripper_rgb, self._cv2.COLOR_RGB2BGR),
+                compression,
             )
+
             if not front_ok or not gripper_ok:
-                raise ValueError("Codifica JPEG non riuscita")
+                raise ValueError("Codifica PNG non riuscita")
         except Exception as exc:
             with self._condition:
                 self._decode_errors += 1
@@ -248,11 +260,11 @@ class TrajectoryRecorder:
             if self._encoding_token == token:
                 self._encoding_token = None
             if not self._recording or self._pending is None or self._pending[0] != token:
-                return  # timed out/stopped while JPEG was being encoded
+                return  # timed out/stopped while PNG was being encoded
             self._frames.append(RecordedFrame(
                 index=len(self._frames) + 1,
-                front_jpeg=front_buf.tobytes(),
-                gripper_jpeg=gripper_buf.tobytes(),
+                front_png=front_buf.tobytes(),
+                gripper_png=gripper_buf.tobytes(),
                 front_stamp_ns=front_stamp,
                 gripper_stamp_ns=gripper_stamp,
                 event=event,

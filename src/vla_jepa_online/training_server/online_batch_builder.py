@@ -1,18 +1,22 @@
 """Preparazione online dei video raccolti dal client UR5e.
 
-Input: archivio ZIP generato da FlaskTrainingTransport.encode(), contenente
-`manifest.json` e una coppia JPEG front/gripper per ogni step acquisito.
+Input:
+    Archivio ZIP contenente manifest.json e coppie PNG RGB
+    delle camere front e gripper.
 
-Output: un batch PyTorch *per finestra*, senza spostarlo sulla GPU:
+Output:
+    Un batch PyTorch per finestra:
+
     {
-        '<front_feature>':   uint8 [1, 8, 3, 224, 224],
-        '<gripper_feature>': uint8 [1, 8, 3, 224, 224],
-        'task':              [prompt_di_movimento],
+        '<front_feature>':   float32 [1, 8, 3, 224, 224],
+        '<gripper_feature>': float32 [1, 8, 3, 224, 224],
+        'task': [prompt_di_movimento],
     }
 
-Il generatore decodifica soltanto gli 8+8 JPEG necessari alla finestra corrente;
-non memorizza l'episodio intero come tensore RGB. Non effettua augmentations:
-queste ultime, se richieste, dovranno essere introdotte esplicitamente.
+    I tensori RGB hanno valori in [0, 1].
+
+    Finestre da 8 frame, stride 5, batch size 1.
+    Nessuna normalizzazione ImageNet aggiuntiva.
 """
 
 from __future__ import annotations
@@ -27,6 +31,7 @@ from typing import Any, Iterator, Mapping
 import numpy as np
 import torch
 from PIL import Image
+import cv2
 
 
 @dataclass(frozen=True)
@@ -53,7 +58,7 @@ class OnlineBatchBuilderConfig:
 
     # Crop FRONTALE IDENTICO a quello richiesto per il futuro fine-tuning
     # e usato per il campionamento degli otto vertici: margini pixel originali
-    # (left=0, top=10, right=140, bottom=90), PRIMA del resize a 224x224.
+    #  PRIMA del resize a 224x224.
     # La camera gripper non e' croppata: nessuna geometria non verificata.
     # La baseline usa (top, bottom, left, right) = (0, 10, 140, 90).
     # CropMargins richiede invece (left, top, right, bottom).
@@ -72,8 +77,6 @@ class OnlineBatchBuilderConfig:
 
     # Limiti difensivi per dati caricati da un client remoto.
     max_frames: int = 2000
-    max_jpeg_bytes: int = 12 * 1024 * 1024
-    max_manifest_bytes: int = 2 * 1024 * 1024
 
 
 @dataclass(frozen=True)
@@ -96,8 +99,6 @@ def _read_manifest(zf: zipfile.ZipFile, cfg: OnlineBatchBuilderConfig) -> dict[s
         raise ValueError("Archivio con nomi di file ZIP duplicati")
     if "manifest.json" not in names:
         raise ValueError("Archivio senza manifest.json")
-    if zf.getinfo("manifest.json").file_size > cfg.max_manifest_bytes:
-        raise ValueError("manifest.json troppo grande")
 
     manifest = json.loads(zf.read("manifest.json"))
     if not isinstance(manifest, dict) or manifest.get("schema_version") != 1:
@@ -120,12 +121,14 @@ def _read_manifest(zf: zipfile.ZipFile, cfg: OnlineBatchBuilderConfig) -> dict[s
     for expected_index, frame in enumerate(frames, start=1):
         if not isinstance(frame, dict) or frame.get("index") != expected_index:
             raise ValueError(f"Frame non ordinato o indice errato alla posizione {expected_index}")
-        for camera, field in (("front", "front_path"), ("gripper", "gripper_path")):
-            path = f"frames/{camera}/{expected_index:06d}.jpg"
+        for camera, field in (
+            ("front", "front_path"),
+            ("gripper", "gripper_path"),
+        ):
+            path = f"frames/{camera}/{expected_index:06d}.png"
             if frame.get(field) != path or path not in names:
-                raise ValueError(f"JPEG mancante o path inatteso: {path}")
-            if zf.getinfo(path).file_size > cfg.max_jpeg_bytes:
-                raise ValueError(f"JPEG troppo grande: {path}")
+                raise ValueError(f"PNG mancante o path inatteso: {path}")
+
         label = frame.get("motion_label")
         if label is not None and (not isinstance(label, str) or not label.strip()):
             raise ValueError(f"motion_label non valido per frame {expected_index}")
@@ -177,9 +180,19 @@ def _image_to_tensor(
             if x0 < 0 or y0 < 0 or x1 <= x0 or y1 <= y0:
                 raise ValueError(f"Crop impossibile per {path}: dimensione {rgb.size}, crop {crop}")
             rgb = rgb.crop((x0, y0, x1, y1))
-        rgb = rgb.resize(image_size, resample=Image.Resampling.BILINEAR)
-        array = np.array(rgb, dtype=np.uint8, copy=True)  # [H,W,C]
-    return torch.from_numpy(array).permute(2, 0, 1).contiguous()  # [C,H,W]
+        array = np.asarray(rgb, dtype=np.uint8)
+        array = cv2.resize(
+            array,
+            image_size,
+            interpolation=cv2.INTER_LINEAR,
+        )
+    return (
+        torch.from_numpy(np.ascontiguousarray(array))
+        .permute(2, 0, 1)
+        .contiguous()
+        .to(torch.float32)
+        .div_(255.0)
+    )
 
 
 class OnlineBatchBuilder:

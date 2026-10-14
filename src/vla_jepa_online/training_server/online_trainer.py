@@ -30,6 +30,20 @@ from typing import Any, Callable, Iterable, Mapping
 
 import torch
 
+def seed_everything(seed: int) -> None:
+    """Imposta i generatori casuali del processo di training."""
+
+    random.seed(seed)
+    np.random.seed(seed)
+
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+    # Evita la selezione automatica di algoritmi cuDNN
+    # sulla base di benchmark che potrebbero variare.
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
 
 @dataclass(frozen=True)
 class OnlineTrainerConfig:
@@ -38,6 +52,7 @@ class OnlineTrainerConfig:
     revision: str | None = None
     resume_from: str | Path | None = None
     device: str = "cuda"
+    seed: int = 1000
 
     # Full training, no PEFT/LoRA. LR separati per facilitare la regolazione.
     qwen_learning_rate: float = 1e-5
@@ -78,6 +93,7 @@ class OnlineVideoTrainer:
         self._checkpoint_sequence = 0  # numero progressivo dei salvataggi completati
         self._requires_recovery = False  # errore in un episodio parzialmente addestrato
         self.device = torch.device(cfg.device)
+        seed_everything(cfg.seed)
 
         if self.device.type != "cuda" or not torch.cuda.is_available():
             raise RuntimeError("Il trainer VLA-JEPA richiede CUDA e BF16")
@@ -436,6 +452,7 @@ class OnlineVideoTrainer:
                         "numpy": self._numpy_rng_snapshot(),
                         "torch_cpu": torch.get_rng_state(),
                         "torch_cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else [],
+                        "seed": self.cfg.seed,
                     },
                 },
                 temporary / "online_trainer_state.pt",
@@ -465,6 +482,12 @@ class OnlineVideoTrainer:
         payload = torch.load(state_path, map_location="cpu", weights_only=True)
         if payload.get("format_version") != 3:
             raise ValueError("Formato checkpoint incompatibile (richiesta versione 3)")
+        saved_seed = payload.get("rng_state", {}).get("seed")
+        if saved_seed is not None and saved_seed != self.cfg.seed:
+            raise ValueError(
+                f"Seed incompatibile nel resume: "
+                f"checkpoint={saved_seed}, configurazione={self.cfg.seed}"
+            )
         for key in ("batch_size", "gradient_accumulation_steps", "checkpoint_every_videos"):
             if payload.get(key) != getattr(self.cfg, key):
                 raise ValueError(f"Config resume incompatibile: {key}")

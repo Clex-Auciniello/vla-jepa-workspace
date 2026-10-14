@@ -66,7 +66,7 @@ trajectory_recorder:
   gripper_topic: /zed_gripper/zed_node/rgb/color/rect/image
   sync_queue_size: 20
   sync_slop_s: 0.05
-  jpeg_quality: 95
+  png_compression: 3
 
 # Comunicazione HTTP con il futuro server Flask (il client non importa Flask).
 # Il POST accoda l'episodio e risponde subito; NON aspettiamo il TRAINED.
