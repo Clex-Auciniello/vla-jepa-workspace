@@ -57,9 +57,9 @@ robot_executor:
   gripper_closed_position: 255.0
   gripper_max_effort: 50.0
 
-# Registrazione temporanea delle due ZED per ogni episodio.
-# fps = frequenza massima desiderata; se le camere producono meno frame,
-# il recorder NON duplica le immagini per raggiungere il valore richiesto.
+# Registrazione delle due ZED per evento (START, micro-step, gripper).
+# Attualmente "fps" e' mantenuto per compatibilita', ma le catture sono
+# event-triggered e NON esiste un limite FPS applicato nel recorder.
 trajectory_recorder:
   fps: 15
   front_topic: /zed_front/zed_node/rgb/color/rect/image
@@ -67,6 +67,9 @@ trajectory_recorder:
   sync_queue_size: 20
   sync_slop_s: 0.05
   png_compression: 3
+  # Telemetria ROS raccolta dopo ogni coppia RGB (joint e gripper reali + TCP).
+  joint_states_topic: /joint_states
+  joint_max_age_s: 1.0
 
 # Comunicazione HTTP con il futuro server Flask (il client non importa Flask).
 # Il POST accoda l'episodio e risponde subito; NON aspettiamo il TRAINED.
@@ -77,3 +80,8 @@ exploration_client:
   request_timeout_s: 30.0
   max_queued_uploads: 3
   min_frames: 8
+
+  # Vista DENTRO il container del percorso host:
+  # /home/asus-mivia/Desktop/Alex/Train_workspace/vla-jepa/vla_jepa_workspace/data/online_trajectories
+  # Il volume workspace deve essere montato in /opt/vla_jepa_train.
+  trajectory_save_path: /opt/vla_jepa_train/data/online_trajectories

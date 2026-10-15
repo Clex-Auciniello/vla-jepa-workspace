@@ -1,4 +1,4 @@
-"""Event-triggered, synchronized front + wrist RGB captures, JPEG in RAM.
+"""Event-triggered, synchronized front + wrist RGB captures, PNG in RAM.
 
 Camera callbacks always run, but an RGB pair is saved ONLY for an explicit
 capture_step() request after robot movement/gripper completion. Each request
@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import Callable, Any
 
 
 @dataclass(frozen=True)
@@ -21,6 +22,8 @@ class TrajectoryRecorderConfig:
     sync_queue_size: int
     sync_slop_s: float
     png_compression: int
+    joint_states_topic: str = "/joint_states"
+    joint_max_age_s: float = 1.0
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "TrajectoryRecorderConfig":
@@ -28,11 +31,13 @@ class TrajectoryRecorderConfig:
 
         with Path(path).open("r", encoding="utf-8") as handle:
             values = yaml.safe_load(handle)["trajectory_recorder"]
-        cfg = cls(**{name: values[name] for name in cls.__dataclass_fields__})
+        cfg = cls(**{name: values[name] for name in cls.__dataclass_fields__ if name in values})
         if cfg.fps <= 0 or cfg.sync_queue_size < 1 or cfg.sync_slop_s <= 0:
             raise ValueError("fps, sync_queue_size e sync_slop_s devono essere positivi")
         if not 0 <= cfg.png_compression <= 9:
             raise ValueError("png_compression deve essere tra 0 e 9")
+        if cfg.joint_max_age_s <= 0 or not cfg.joint_states_topic:
+            raise ValueError("joint_states_topic o joint_max_age_s non validi")
         if not cfg.front_topic or not cfg.gripper_topic or cfg.front_topic == cfg.gripper_topic:
             raise ValueError("I topic front e gripper devono essere distinti e non vuoti")
         return cfg
@@ -40,7 +45,7 @@ class TrajectoryRecorderConfig:
 
 @dataclass(frozen=True)
 class RecordedFrame:
-    """One synchronized pair, with optional per-transition prompt metadata."""
+    """One synchronized pair, with per-step telemetry and executed command."""
 
     index: int  # 1-based, consecutive, independent of the ROS stamp
     front_png: bytes
@@ -50,6 +55,8 @@ class RecordedFrame:
     event: str = "move"
     segment_id: int | None = None
     motion_label: str | None = None
+    robot_state: dict[str, Any] | None = None
+    commanded_action: tuple[float, ...] | None = None  # xyz, xyzw, gripper (0/1)
 
     @property
     def sync_error_ms(self) -> float:
@@ -96,7 +103,8 @@ class TrajectoryRecorder:
     the episode, but do not enable any automatic frame buffering.
     """
 
-    def __init__(self, node, config: TrajectoryRecorderConfig):
+    def __init__(self, node, config: TrajectoryRecorderConfig,
+                 state_reader: Callable[[RecordedFrame], dict[str, Any]] | None = None):
         import cv2
         import message_filters
         from cv_bridge import CvBridge
@@ -105,6 +113,7 @@ class TrajectoryRecorder:
 
         self.node = node
         self.cfg = config
+        self.state_reader = state_reader
         self.bridge = CvBridge()
         self._cv2 = cv2
         self._condition = threading.Condition()
@@ -142,7 +151,9 @@ class TrajectoryRecorder:
             self._recording = True
 
     def capture_step(self, event: str = "move", *, segment_id: int | None = None,
-                     motion_label: str | None = None, timeout_s: float = 5.0) -> RecordedFrame:
+                     motion_label: str | None = None, timeout_s: float = 5.0,
+                     target_pose: object | None = None,
+                     gripper_closed: bool | None = None) -> RecordedFrame:
         """Block until a NEW synchronized pair recorded after this request.
 
         Both camera header timestamps must be newer than the local ROS clock at
@@ -175,7 +186,34 @@ class TrajectoryRecorder:
                         f"dopo l'evento {event!r}"
                     )
                 self._condition.wait(timeout=remaining)
-            return self._frames[-1]
+            recorded = self._frames[-1]
+
+        # Lo stato e' campionato dopo la coppia di immagini, fuori dal lock ROS.
+        # Separatamente conserviamo il target eseguito dall'executor (non il
+        # TCP misurato): stessa convenzione xyz,xyzw,gripper normalizzato.
+        try:
+            commanded = None
+            if target_pose is not None:
+                if gripper_closed is None:
+                    raise ValueError("target_pose richiede gripper_closed")
+                commanded = (
+                    *(float(v) for v in target_pose.xyz),
+                    *(float(v) for v in target_pose.quaternion_xyzw),
+                    float(bool(gripper_closed)),
+                )
+                if len(commanded) != 8:
+                    raise ValueError("Comando non ha dimensione 8")
+            state = self.state_reader(recorded) if self.state_reader is not None else None
+            if self.state_reader is not None and not isinstance(state, dict):
+                raise ValueError("state_reader non ha restituito un dizionario")
+        except Exception as exc:
+            raise FrameCaptureError(f"Cattura stato/comando robot fallita: {exc}") from exc
+        with self._condition:
+            updated = replace(recorded, robot_state=state, commanded_action=commanded)
+            if not self._frames or self._frames[-1].index != recorded.index:
+                raise FrameCaptureError("Ordine catture non coerente")
+            self._frames[-1] = updated
+            return updated
 
     def stop(self) -> RecordedEpisode:
         """Stop captures; return immutable frame references in RAM."""

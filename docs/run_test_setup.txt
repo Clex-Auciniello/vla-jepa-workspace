@@ -1,0 +1,91 @@
+export ROBOT_IP=192.168.1.100
+
+export UR5e_2f_85_PATH="/home/asus-mivia/Desktop/Alex/UR5e-2f-85"
+
+export VLA_JEPA_VENV_HOST="/home/asus-mivia/Desktop/UR-Control/UR5e-2f-85/ai_controller/ai_controller/models/vla_jepa_controller/venv/vla_jepa_venv"
+
+export VLA_JEPA_CHECKPOINT_HOST="/home/asus-mivia/Desktop/UR-Control/UR5e-2f-85/ai_controller/checkpoint_folder/lerobot/vla-jepa/016000/pretrained_model"
+
+export VLA_JEPA_HF_CACHE_HOST="/home/asus-mivia/Desktop/Alex/UR5e-2f-85/ai_controller/ai_controller/models/vla_jepa_controller/huggingface"
+
+export VLA_JEPA_TRAIN_WORKSPACE_HOST="/home/asus-mivia/Desktop/Alex/Train_workspace/vla-jepa/vla_jepa_workspace"
+
+
+docker run -it --rm \
+  --gpus all \
+  --privileged \
+  --cap-add=SYS_NICE \
+  --cpuset-cpus="0-19" \
+  --network host \
+  --ipc=host \
+  --pid=host \
+  --ulimit memlock=-1:-1 \
+  --ulimit rtprio=99 \
+  --shm-size=4g \
+  --security-opt seccomp=unconfined \
+  -e ROBOT_IP="${ROBOT_IP}" \
+  -e NVIDIA_VISIBLE_DEVICES=all \
+  -e NVIDIA_DRIVER_CAPABILITIES=all \
+  -v "${UR5e_2f_85_PATH}/ur5e_2f_85:/home/ros2_ws/src/ur5e_2f_85" \
+  -v "${UR5e_2f_85_PATH}/dataset_collector:/home/ros2_ws/src/dataset_collector" \
+  -v "${UR5e_2f_85_PATH}/ai_controller:/home/ros2_ws/src/ai_controller" \
+  -v "${UR5e_2f_85_PATH}/moveit_controller:/home/ros2_ws/src/moveit_controller" \
+  -v "${VLA_JEPA_VENV_HOST}:/home/ros2_ws/src/ai_controller/ai_controller/models/vla_jepa_controller/venv/vla_jepa_venv" \
+  -v "${VLA_JEPA_CHECKPOINT_HOST}:/opt/vla_jepa/checkpoint:ro" \
+  -v "${VLA_JEPA_HF_CACHE_HOST}:/opt/vla_jepa/huggingface" \
+  -v "${VLA_JEPA_TRAIN_WORKSPACE_HOST}:/opt/vla_jepa_train" \
+  --name ur_robotiq_teleoperation_container_test \
+  ur_robotiq_teleoperation
+
+
+cd /opt/vla_jepa_train
+
+export VENV="/home/ros2_ws/src/ai_controller/ai_controller/models/vla_jepa_controller/venv/vla_jepa_venv"
+
+export PYTHONPATH="/opt/vla_jepa_train/src:${PYTHONPATH:-}"
+
+export HF_HOME="/opt/vla_jepa/huggingface"
+export HF_HUB_CACHE="$HF_HOME/hub"
+
+mkdir -p logs
+
+set -o pipefail
+
+
+Test 1 — Quick preflight
+Verifica ambiente, CUDA, checkpoint DROID, cache Hugging Face, exploration simulata, costruzione dei batch e server Flask con trainer fittizio.
+"$VENV/bin/python" -u scripts/test_online_pretraining_setup.py \
+  --mode quick \
+  --checkpoint checkpoints/base \
+  2>&1 | tee logs/preflight_quick.log
+
+
+Test 2 — GPU forward/backward
+Carica realmente VLA-JEPA e verifica World Model loss e propagazione dei gradienti a Qwen e Predictor. Non aggiorna ancora i pesi.
+"$VENV/bin/python" -u scripts/test_online_pretraining_setup.py \
+  --mode gpu \
+  --checkpoint checkpoints/base \
+  2>&1 | tee logs/preflight_gpu.log
+
+
+Test 3 — Gradient accumulation e AdamW
+Esegue dieci backward su finestre sintetiche e un aggiornamento effettivo dei parametri attraverso AdamW.
+"$VENV/bin/python" -u scripts/test_online_pretraining_setup.py \
+  --mode gpu \
+  --optimizer-step \
+  --checkpoint checkpoints/base \
+  2>&1 | tee logs/preflight_optimizer.log
+
+
+Test 4 — Checkpoint e resume
+Esegue il training sintetico, salva un checkpoint completo, ricarica i pesi e ripristina lo stato AdamW. Il checkpoint di prova viene salvato temporaneamente e rimosso alla fine.
+mkdir -p outputs/checkpoint_tests
+
+"$VENV/bin/python" -u scripts/test_online_pretraining_setup.py \
+  --mode gpu \
+  --optimizer-step \
+  --checkpoint-save \
+  --resume-test \
+  --checkpoint-test-root /opt/vla_jepa_train/outputs/checkpoint_tests \
+  --checkpoint checkpoints/base \
+  2>&1 | tee logs/preflight_checkpoint_resume.log

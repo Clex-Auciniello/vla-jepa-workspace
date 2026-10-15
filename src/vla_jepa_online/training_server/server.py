@@ -4,7 +4,7 @@
 Un singolo processo Flask e un singolo worker GPU condividono una coda FIFO in
 RAM. Non esistono SQLite, spool su disco o replay automatici degli episodi.
 
-Il client continua a fare POST /train_episode con un archivio ZIP di JPEG e
+Il client continua a fare POST /train_episode con un archivio ZIP di PNG e
 manifest.json. La risposta HTTP 202 significa "queued", NON "trained".
 
 Gli UNICI dati persistenti sono due checkpoint alternati, contenenti i pesi
@@ -19,6 +19,7 @@ import argparse
 import io
 import json
 import logging
+import queue
 import threading
 from collections import deque
 from dataclasses import dataclass
@@ -136,6 +137,7 @@ class TrainingService:
 
         self._lock = threading.RLock()
         self._cv = threading.Condition(self._lock)
+        self._monitor_subscribers: list[Callable[[str], None]] = []
 
         # Coda FIFO dei video ricevuti: nessun file su disco.
         self._pending: deque[QueuedEpisode] = deque()
@@ -166,6 +168,27 @@ class TrainingService:
 
         self._worker.start()
 
+    def subscribe_monitor(self, listener: Callable[[str], None]) -> None:
+        """Consegna una fotografia iniziale e ogni transizione successiva.
+
+        Nessun timer/polling. Il callback deve essere non bloccante:
+        ServerStatusReporter inserisce semplicemente una stringa in coda.
+        """
+        with self._lock:
+            self._monitor_subscribers.append(listener)
+            listener(format_server_monitor(self, "STATO INIZIALE"))
+
+    def _notify_monitor_unlocked(self, event: str) -> None:
+        """Chiamata mentre il lock di stato e' gia' acquisito."""
+        if not self._monitor_subscribers:
+            return
+        line = format_server_monitor(self, event)
+        for listener in tuple(self._monitor_subscribers):
+            try:
+                listener(line)
+            except Exception:
+                LOGGER.exception("Callback monitor fallita")
+
     def close(self, timeout: float = 5.0) -> None:
         """Arresto cooperativo: usare solo dopo safe_to_stop=true.
 
@@ -184,6 +207,7 @@ class TrainingService:
                 )
 
             self._stop = True
+            self._notify_monitor_unlocked("ARRESTO RICHIESTO")
             self._cv.notify_all()
 
         self._worker.join(timeout=timeout)
@@ -419,6 +443,7 @@ class TrainingService:
             self._pending.append(
                 QueuedEpisode(episode_id, payload)
             )
+            self._notify_monitor_unlocked(f"RICEVUTO {episode_id}")
 
             # Sveglia il worker GPU, se sta aspettando.
             self._cv.notify_all()
@@ -451,6 +476,7 @@ class TrainingService:
             with self._lock:
                 self._episodes[episode_id]["windows_done"] = done
                 self._episodes[episode_id]["latest_wm_loss"] = wm_loss
+                self._notify_monitor_unlocked(f"FINESTRA {episode_id} {done}/{self._episodes[episode_id]['windows_total']}")
 
         except Exception:
             LOGGER.exception(
@@ -508,6 +534,7 @@ class TrainingService:
                 )
 
                 self._phase = "ready"
+                self._notify_monitor_unlocked("MODELLO PRONTO")
                 self._cv.notify_all()
 
             LOGGER.info(
@@ -525,6 +552,7 @@ class TrainingService:
                 self._error = (
                     f"Inizializzazione fallita: {exc}"
                 )
+                self._notify_monitor_unlocked("ERRORE INIZIALIZZAZIONE")
 
             return
 
@@ -539,6 +567,7 @@ class TrainingService:
 
                 if self._stop:
                     self._phase = "stopped"
+                    self._notify_monitor_unlocked("STOP")
                     return
 
                 # Preleva il primo episodio della FIFO.
@@ -552,6 +581,7 @@ class TrainingService:
                 info["status"] = "training"
                 info["started_at"] = _now()
                 info["windows_done"] = 0
+                self._notify_monitor_unlocked(f"TRAIN START {episode_id}")
 
             LOGGER.info(
                 "TRAIN %s: %d finestre",
@@ -616,6 +646,9 @@ class TrainingService:
                             if record["status"] == "trained":
                                 record["checkpointed"] = True
 
+                    self._current = None
+                    self._notify_monitor_unlocked(f"TRAINED {episode_id}")
+
                 LOGGER.info(
                     "TRAINED %s: video=%s step=%s checkpoint=%s",
                     episode_id,
@@ -644,6 +677,7 @@ class TrainingService:
                         "Riavviare dall'ultimo checkpoint."
                     )
                     self._current = None
+                    self._notify_monitor_unlocked(f"ERRORE TRAIN {episode_id}")
 
                 return
 
@@ -655,6 +689,65 @@ class TrainingService:
 
                 with self._lock:
                     self._current = None
+
+
+def format_server_monitor(service: TrainingService, event: str = "STATUS") -> str:
+    """Un evento = una riga stampata: FIFO server, GPU e safe_to_stop."""
+    status = service.status()
+    fifo = service.queue()
+    current = status["current_episode_id"]
+    ongoing = service.episode(current) if current else None
+    ids = [str(item["episode_id"]) for item in fifo["queued"]]
+    stats = status.get("trainer") or {}
+    progress = ""
+    if ongoing is not None:
+        done = int(ongoing["windows_done"])
+        total = int(ongoing["windows_total"])
+        filled = int(20 * done / max(total, 1))
+        bar = "#" * filled + "-" * (20 - filled)
+        loss = ongoing.get("latest_wm_loss")
+        loss_text = f" loss={loss:.5f}" if isinstance(loss, (int, float)) else ""
+        progress = f" [{bar}] {done}/{total} finestre{loss_text}"
+    return (
+        f"[{event}] server={status['server']} | FIFO={status['queued']}/{status['queue_capacity']}"
+        f" [{', '.join(ids) or '-'}] | GPU={current or '-'}{progress}"
+        f" | video={stats.get('processed_videos', '?')}"
+        f" step={stats.get('global_step', '?')}"
+        f" pending_windows={stats.get('pending_windows', '?')}"
+        f" checkpointed={status['checkpointed_videos']}"
+        f" | safe_to_stop={'TRUE' if status['safe_to_stop'] else 'FALSE'}"
+        + (f" | ERRORE={status['error']}" if status.get("error") else "")
+    )
+
+
+class ServerStatusReporter:
+    """Stampa SOLO su eventi reali, compreso ogni backward completato.
+
+    La callback deposita una fotografia dello stato in SimpleQueue;
+    il thread di log non blocca il worker CUDA e non usa polling.
+    """
+
+    def __init__(self, service: TrainingService):
+        self.service = service
+        self._messages: queue.SimpleQueue[str | None] = queue.SimpleQueue()
+        self._thread = threading.Thread(
+            target=self._run, daemon=True, name="vla-jepa-terminal-monitor"
+        )
+
+    def start(self) -> None:
+        self._thread.start()
+        self.service.subscribe_monitor(self._messages.put)
+
+    def close(self) -> None:
+        self._messages.put(None)
+        self._thread.join(timeout=5.0)
+
+    def _run(self) -> None:
+        while True:
+            item = self._messages.get()
+            if item is None:
+                return
+            LOGGER.info("%s", item)
 
 
 def create_app(service: TrainingService):
@@ -826,6 +919,13 @@ def main() -> None:
     )
 
     app = create_app(service)
+    monitor = ServerStatusReporter(service)
+    monitor.start()
+
+    LOGGER.info(
+        "PANNELLO SERVER: GET /status, GET /queue, GET /episodes/<id>. "
+        "Monitor automatico; Ctrl+C SOLO se safe_to_stop=TRUE."
+    )
 
     LOGGER.warning(
         "Avviare un solo processo Flask; "
@@ -842,6 +942,9 @@ def main() -> None:
         )
 
     finally:
+        # Mostra sempre l'ultimo valore PRIMA dell'arresto cooperativo.
+        monitor.close()
+        LOGGER.warning("ARRESTO RICHIESTO: %s", format_server_monitor(service))
         service.close()
 
 

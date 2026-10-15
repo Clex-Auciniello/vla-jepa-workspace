@@ -258,6 +258,9 @@ class RobotExecutor:
         its directional instruction, or the explicit rotation/gripper action.
         """
         current_pose = plan.start_pose
+        # prepare_home() apre il gripper prima di START. Conserviamo il comando
+        # OPEN/CLOSED corrente per associarlo a ogni micro-step registrato.
+        gripper_closed = False
         try:
             for command in plan.commands:
                 if command.kind == "pose":
@@ -277,16 +280,21 @@ class RobotExecutor:
                         if on_step is not None:
                             on_step("rotate" if pure_rotation else "move",
                                     segment_id=command.segment_id,
-                                    motion_label=command.motion_label)
+                                    motion_label=command.motion_label,
+                                    target_pose=micro_target,
+                                    gripper_closed=gripper_closed)
                 else:
                     assert command.gripper_closed is not None
                     self.backend.set_gripper(command.gripper_closed)
+                    gripper_closed = bool(command.gripper_closed)
                     if on_step is not None:
                         on_step("gripper_close" if command.gripper_closed else "gripper_open",
                                 segment_id=command.segment_id,
                                 motion_label=(command.motion_label or
                                               ("Close the gripper" if command.gripper_closed
-                                               else "Open the gripper")))
+                                               else "Open the gripper")),
+                                target_pose=current_pose,
+                                gripper_closed=gripper_closed)
         except Exception as exc:
             raise RobotExecutionError(f"Esplorazione interrotta: {exc}") from exc
         return plan.waypoint_ids

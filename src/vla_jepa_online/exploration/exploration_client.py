@@ -1,11 +1,11 @@
-"""Client ROS per pretraining online VLA-JEPA con upload asincrono verso Flask.
+"""Client ROS per pretraining online VLA-JEPA con archivio ZIP e upload asincrono verso Flask.
 
 Il client muove il robot, registra in RAM e chiede approvazione manuale.
 Accettazione operatore: aggiorna IMMEDIATAMENTE ID e contatori del tracker.
 POST /train_episode viene effettuato in un thread separato; la registrazione
 successiva NON attende il training. Lo stato training non modifica le visite.
 
-Niente video persistenti su disco, niente training qui, niente retry automatico
+Archivi ZIP persistenti su disco prima del POST, niente training qui, niente retry automatico
 di POST ambiguo (un timeout non prova che il server non abbia ricevuto il video).
 """
 
@@ -30,6 +30,8 @@ from vla_jepa_online.exploration.random_walker import RandomWalker, load_explora
 from vla_jepa_online.exploration.robot_executor import (
     ROSMoveItBackend, RobotExecutionError, RobotExecutor, RobotExecutorConfig,
 )
+from vla_jepa_online.exploration.robot_state_reader import RobotStateReader
+from vla_jepa_online.exploration.trajectory_saver import TrajectorySaver
 from vla_jepa_online.exploration.trajectory_recorder import (
     FrameCaptureError, RecordedEpisode, TrajectoryRecorder, TrajectoryRecorderConfig,
 )
@@ -45,17 +47,20 @@ class ExplorationClientConfig:
     request_timeout_s: float
     max_queued_uploads: int
     min_frames: int
+    trajectory_save_path: str = "/opt/vla_jepa_train/data/online_trajectories"
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "ExplorationClientConfig":
         import yaml
         with Path(path).open("r", encoding="utf-8") as stream:
             values = yaml.safe_load(stream)["exploration_client"]
-        cfg = cls(**{name: values[name] for name in cls.__dataclass_fields__})
+        cfg = cls(**{name: values[name] for name in cls.__dataclass_fields__ if name in values})
         if (not cfg.server_url.startswith(("http://", "https://"))
                 or cfg.request_timeout_s <= 0
                 or type(cfg.max_queued_uploads) is not int or cfg.max_queued_uploads < 1
-                or type(cfg.min_frames) is not int or cfg.min_frames < 2):
+                or type(cfg.min_frames) is not int or cfg.min_frames < 2
+                or not str(cfg.trajectory_save_path).strip()
+):
             raise ValueError("Parametri exploration_client non validi")
         return cfg
 
@@ -69,8 +74,9 @@ class UploadTask:
     episode_id: str
     table_mode: str
     waypoint_ids: tuple[int, ...]
-    episode: RecordedEpisode
+    episode: RecordedEpisode | None
     start_waypoint_id: int
+    archive_path: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -94,6 +100,8 @@ class FlaskTrainingTransport:
 
     @staticmethod
     def encode(task: UploadTask) -> bytes:
+        if task.episode is None:
+            raise ValueError("UploadTask senza episodio: usare archive_path per l'upload")
         buffer = io.BytesIO()
         manifest_frames = []
         with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_STORED) as archive:
@@ -104,7 +112,7 @@ class FlaskTrainingTransport:
                 archive.writestr(front, frame.front_png)
                 archive.writestr(wrist, frame.gripper_png)
 
-                manifest_frames.append({
+                entry = {
                     "index": frame.index,
                     "front_stamp_ns": frame.front_stamp_ns,
                     "gripper_stamp_ns": frame.gripper_stamp_ns,
@@ -113,7 +121,12 @@ class FlaskTrainingTransport:
                     "motion_label": frame.motion_label,
                     "front_path": front,
                     "gripper_path": wrist,
-                })
+                }
+                if frame.robot_state is not None:
+                    entry["robot_state"] = frame.robot_state
+                if frame.commanded_action is not None:
+                    entry["commanded_action"] = list(frame.commanded_action)
+                manifest_frames.append(entry)
             archive.writestr("manifest.json", json.dumps({
                 "schema_version": 1,
                 "episode_id": task.episode_id,
@@ -145,8 +158,11 @@ class FlaskTrainingTransport:
         return str(status)
 
     def upload(self, task: UploadTask) -> str:
+        # Se archivio persistente, HTTP legge ESATTAMENTE gli stessi byte salvati.
+        payload = (task.archive_path.read_bytes() if task.archive_path is not None
+                   else self.encode(task))
         request = Request(
-            self.base_url + "/train_episode", data=self.encode(task),
+            self.base_url + "/train_episode", data=payload,
             method="POST", headers={
                 "Content-Type": "application/zip", "Accept": "application/json",
                 "X-Episode-ID": task.episode_id,
@@ -157,7 +173,7 @@ class FlaskTrainingTransport:
 
 
 class AsyncTrainingSender:
-    """Invia in background i video a Flask, senza attendere il training.
+    """Invia in background gli ZIP persistiti a Flask, senza attendere il training.
 
     Trasmette eventuali esiti/errori del POST al thread principale solo per
     visualizzarli: NON modifica ID o conteggi degli episodi accettati.
@@ -168,6 +184,8 @@ class AsyncTrainingSender:
         self.uploads: queue.Queue[UploadTask] = queue.Queue(maxsize=max_queued_uploads)
         self.events: queue.SimpleQueue[TrainingEvent] = queue.SimpleQueue()
         self._stop = threading.Event()
+        self._state_lock = threading.Lock()
+        self._inflight: str | None = None
         self._worker = threading.Thread(target=self._run, daemon=True, name="vla_jepa_flask_sender")
 
     def start(self) -> None:
@@ -178,6 +196,17 @@ class AsyncTrainingSender:
 
     def enqueue(self, task: UploadTask) -> None:
         self.uploads.put_nowait(task)
+
+    def snapshot(self) -> tuple[int, int, str | None]:
+        """Numero di POST in attesa, capacita' e ID del POST in corso."""
+        with self._state_lock:
+            inflight = self._inflight
+        return self.uploads.qsize(), self.uploads.maxsize, inflight
+
+    def pending_ids(self) -> tuple[str, ...]:
+        """ID dei POST in attesa nella coda LOCALE del client."""
+        with self.uploads.mutex:
+            return tuple(item.episode_id for item in self.uploads.queue)
 
     def drain_events(self) -> list[TrainingEvent]:
         out = []
@@ -193,14 +222,18 @@ class AsyncTrainingSender:
                 task = self.uploads.get(timeout=0.25)
             except queue.Empty:
                 continue
+            with self._state_lock:
+                self._inflight = task.episode_id
             try:
                 status = self.transport.upload(task)
                 self.events.put(TrainingEvent(task.episode_id, status))
             except Exception as exc:
                 self.events.put(TrainingEvent(task.episode_id, "upload_error", str(exc)))
             finally:
+                with self._state_lock:
+                    self._inflight = None
                 self.uploads.task_done()
-                del task  # rilascia i JPEG di quell'episodio
+                del task  # in modalita' persistente tiene solo il path ZIP
 
     def shutdown(self) -> None:
         """Attende solo che terminino i POST in coda, non il training Flask."""
@@ -213,26 +246,70 @@ class ExplorationClient:
         self, *, grid: dict, tracker: CoverageTracker, walker: RandomWalker,
         sampler: MotionSampler, robot: RobotExecutor, recorder: TrajectoryRecorder,
         sender: AsyncTrainingSender, min_frames: int,
+        saver: TrajectorySaver,
         ask: Callable[[str], str] = input,
         report: Callable[[str], None] = print,
     ) -> None:
         self.grid, self.tracker, self.walker, self.sampler = grid, tracker, walker, sampler
         self.robot, self.recorder = robot, recorder
         self.sender, self.min_frames = sender, min_frames
+        self.saver = saver
         self.ask, self.report = ask, report
+        self._last_saved_id: str | None = None
+        self._last_saved_path: Path | None = None
+        self._last_post_result: str = "-"
 
     def _drain_training_events(self) -> None:
         for event in self.sender.drain_events():
+            if event.episode_id == self._last_saved_id:
+                self._last_post_result = (
+                    "ERRORE POST" if event.status == "upload_error"
+                    else "POST accettato (HTTP); training asincrono"
+                )
             if event.status == "upload_error":
-                self.report(f"[SERVER] {event.episode_id}: ERRORE upload: {event.message}. "
-                            "Conteggi gia' aggiornati all'accettazione; nessun retry automatico.")
+                self.report(
+                    f"[CLIENT POST] {event.episode_id}: ERRORE {event.message}. "
+                    "ZIP conservato; nessun retry automatico."
+                )
             else:
-                self.report(f"[SERVER] {event.episode_id}: POST accettato ({event.status}).")
+                self.report(
+                    f"[CLIENT POST] {event.episode_id}: inviato, "
+                    f"risposta HTTP={event.status}."
+                )
+
+    def _show_monitor(self) -> None:
+        """Solo coda POST LOCALE e ultima traiettoria salvata.
+
+        Nessuna GET al server: coda FIFO, GPU e safe_to_stop
+        appartengono esclusivamente al terminale del server.
+        """
+        self._drain_training_events()
+        self.report("\n" + "-" * 62)
+        self.report("CLIENT - INVII POST LOCALI")
+        if hasattr(self.sender, "snapshot"):
+            queued, capacity, inflight = self.sender.snapshot()
+            if hasattr(self.sender, "pending_ids"):
+                ids = self.sender.pending_ids()
+                self.report(
+                    f"Da inviare: {queued}/{capacity} "
+                    f"[{', '.join(ids) if ids else '-'}]"
+                )
+            else:
+                self.report(f"Da inviare: {queued}/{capacity}")
+            self.report(f"Invio in corso: {inflight or '-'}")
+        else:
+            self.report("Coda POST: monitoraggio non disponibile")
+        self.report(f"Ultima traiettoria salvata: {self._last_saved_id or '-'}")
+        self.report(f"Ultimo POST: {self._last_post_result}")
+        self.report("-" * 62)
 
     def _mode(self, previous: str | None) -> str | None:
         while True:
+            self._show_monitor()
             extra = f" [INVIO={previous}]" if previous else ""
-            answer = self.ask(f"Tavolo [e=EMPTY / o=OCCUPIED / q=esci]{extra}: ").strip().lower()
+            answer = self.ask(f"Tavolo [e=EMPTY / o=OCCUPIED / t=stato / q=esci]{extra}: ").strip().lower()
+            if answer == "t":
+                continue
             if answer == "q":
                 return None
             if answer in ("e", "empty"):
@@ -245,7 +322,10 @@ class ExplorationClient:
 
     def _enter(self, prompt: str) -> bool:
         while True:
-            answer = self.ask(prompt + " [INVIO / q=esci]: ").strip().lower()
+            self._show_monitor()
+            answer = self.ask(prompt + " [INVIO / t=stato / q=esci]: ").strip().lower()
+            if answer == "t":
+                continue
             if answer == "":
                 return True
             if answer == "q":
@@ -253,7 +333,10 @@ class ExplorationClient:
 
     def _decision(self) -> str:
         while True:
-            answer = self.ask("Registrazione: [a=accetta / s=scarta / q=esci]: ").strip().lower()
+            self._show_monitor()
+            answer = self.ask("Registrazione: [a=accetta / s=scarta / t=stato / q=esci]: ").strip().lower()
+            if answer == "t":
+                continue
             if answer in ("a", "s", "q"):
                 return answer
 
@@ -266,7 +349,8 @@ class ExplorationClient:
         mode: str | None = None
         home_ready = False
         self.sender.start()
-        self.report("Client VLA-JEPA: upload/training asincroni via Flask, RGB solo in RAM.")
+        self.report(f"Client VLA-JEPA: ZIP persistenti in {self.saver.root}; "
+                    "upload/training asincroni via Flask.")
         try:
             while True:
                 self._drain_training_events()
@@ -320,7 +404,10 @@ class ExplorationClient:
                 robot_error: Exception | None = None
                 try:
                     # START and every completed micro-step/gripper event get ONE fresh pair.
-                    self.recorder.capture_step(event="start")
+                    self.recorder.capture_step(
+                        event="start", target_pose=plan.start_pose,
+                        gripper_closed=False,
+                    )
                     self.robot.execute(plan, on_step=self.recorder.capture_step)
                 except (RobotExecutionError, FrameCaptureError) as exc:
                     robot_error = exc
@@ -358,17 +445,41 @@ class ExplorationClient:
                         break
                     continue
 
-                # Exceptional backpressure only: do not retain unbounded JPEGs.
+                # Backpressure HTTP: il sender contiene percorsi ZIP, non immagini.
                 while not self.sender.can_enqueue():
                     self.report("Coda upload RAM piena: attendi che finisca un INVIO HTTP "
                                 "(non il training) prima di accettare questo episodio.")
                     time.sleep(0.5)
                     self._drain_training_events()
+                # La traiettoria viene salvata PRIMA di consumare ID/contatori,
+                # usando ESATTAMENTE lo stesso ZIP che verrà inviato a Flask.
+                if any(f.robot_state is None or f.commanded_action is None
+                       for f in episode.frames):
+                    self.tracker.discard_episode(episode_id)
+                    raise RuntimeError(
+                        "Episodio privo di stato o comando per almeno un frame: upload bloccato"
+                    )
+                packed = FlaskTrainingTransport.encode(
+                    UploadTask(episode_id, mode, plan.waypoint_ids, episode, start_id)
+                )
+                try:
+                    archive_path = self.saver.save(episode_id, packed)
+                except OSError as exc:
+                    self.tracker.discard_episode(episode_id)
+                    raise RuntimeError(f"Salvataggio traiettoria fallito (nessun POST): {exc}") from exc
+                self._last_saved_id = episode_id
+                self._last_saved_path = archive_path
+                self._last_post_result = "salvato, in attesa di invio"
+                self.report(f"[CLIENT] ZIP salvato: {episode_id} -> {archive_path}")
                 self.tracker.accept_episode(episode_id, plan.waypoint_ids, start_id)
-                self.sender.enqueue(UploadTask(episode_id, mode, plan.waypoint_ids, episode, start_id))
-                self.report(f"{episode_id} ACCETTATO: visite aggiornate e POST in coda. "
-                            f"Prossimo ID: {self.tracker.next_episode_id}. "
-                            "Puoi iniziare subito una nuova registrazione.")
+                # Il sender mantiene in RAM solo il percorso, non le immagini.
+                self.sender.enqueue(UploadTask(
+                    episode_id, mode, plan.waypoint_ids, None, start_id,
+                    archive_path=archive_path,
+                ))
+                self.report(f"{episode_id} ACCETTATO e inserito nella coda POST locale: {archive_path}. "
+                            f"Visite aggiornate e POST in coda. "
+                            f"Prossimo ID: {self.tracker.next_episode_id}.")
         finally:
             self.report("Uscita: completo gli eventuali POST ancora in RAM; "
                         "NON attendo il training Flask.")
@@ -415,15 +526,21 @@ def main(argv: list[str] | None = None) -> int:
         ros_executor = MultiThreadedExecutor(num_threads=3)
         ros_executor.add_node(node)
         robot = RobotExecutor(ROSMoveItBackend(node, robot_cfg), robot_cfg)
-        recorder = TrajectoryRecorder(node, recorder_cfg)
+        state_reader = RobotStateReader(
+            node, robot.backend.get_tcp_pose,
+            joint_states_topic=recorder_cfg.joint_states_topic,
+            joint_max_age_s=recorder_cfg.joint_max_age_s,
+        )
+        recorder = TrajectoryRecorder(node, recorder_cfg, state_reader=state_reader.read)
         spinner = threading.Thread(target=ros_executor.spin, daemon=True, name="vla_jepa_ros")
         spinner.start()
         sender = AsyncTrainingSender(
             FlaskTrainingTransport(cfg), max_queued_uploads=cfg.max_queued_uploads,
         )
+        saver = TrajectorySaver(cfg.trajectory_save_path)
         ExplorationClient(grid=grid, tracker=tracker, walker=walker, sampler=sampler,
                           robot=robot, recorder=recorder, sender=sender,
-                          min_frames=cfg.min_frames).run()
+                          min_frames=cfg.min_frames, saver=saver).run()
     finally:
         if ros_executor is not None:
             ros_executor.shutdown(timeout_sec=5.0)

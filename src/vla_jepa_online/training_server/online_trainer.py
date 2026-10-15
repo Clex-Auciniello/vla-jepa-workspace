@@ -81,6 +81,7 @@ class OnlineVideoTrainer:
     """
 
     def __init__(self, cfg: OnlineTrainerConfig) -> None:
+        from lerobot.configs.policies import PreTrainedConfig
         from lerobot.policies.vla_jepa.configuration_vla_jepa import VLAJEPAConfig
         from lerobot.policies.vla_jepa.modeling_vla_jepa import VLAJEPAPolicy
 
@@ -115,13 +116,28 @@ class OnlineVideoTrainer:
             if not math.isfinite(value) or value <= 0:
                 raise ValueError(f"{key} deve essere positivo e finito")
 
-        # Leggiamo CONFIG + PESI dal checkpoint completo. Lo stato AdamW verra'
-        # invece recuperato dal nostro snapshot solo in caso di resume.
+        # Caricamento della configurazione tramite la classe base LeRobot.
+        # Il campo "type" nel config.json seleziona la sottoclasse registrata.
+        # Non carichiamo direttamente con VLAJEPAConfig.from_pretrained(),
+        # per evitare l'errore di deserializzazione Draccus.
+
         load_path = str(cfg.resume_from or cfg.pretrained_path)
         revision = None if cfg.resume_from is not None else cfg.revision
-        model_cfg = VLAJEPAConfig.from_pretrained(load_path, revision=revision)
+
+        model_cfg = PreTrainedConfig.from_pretrained(
+            load_path,
+            revision=revision,
+        )
+
+        # Verifica che LeRobot abbia riconosciuto la policy corretta.
+        if not isinstance(model_cfg, VLAJEPAConfig):
+            raise TypeError(
+                f"Configurazione inattesa: {type(model_cfg).__name__}"
+            )
+
         if model_cfg.type != "vla_jepa":
             raise ValueError(f"Checkpoint non VLA-JEPA: {model_cfg.type}")
+        
         if not model_cfg.enable_world_model or model_cfg.freeze_qwen:
             raise ValueError("Servono enable_world_model=True e freeze_qwen=False")
         if model_cfg.use_peft:
@@ -131,7 +147,7 @@ class OnlineVideoTrainer:
         model_cfg.device = str(self.device)
 
         self.policy = VLAJEPAPolicy.from_pretrained(
-            load_path, config=model_cfg, revision=revision, strict=True
+            load_path, config=model_cfg, revision=revision, strict=False
         )
         self.policy.to(self.device)
         model = self.policy.model
