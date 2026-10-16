@@ -174,3 +174,40 @@ I file saranno in:
 
 Se invece vuoi ripetere tutta l'acquisizione dall'inizio, sovrascrivendo i file precedenti:
 python3 scripts/workspace_vertex_collector.py --overwrite
+
+
+
+
+Terminata l'acquisizione, resta nel container UR.
+
+cd /opt/vla_jepa_train
+
+export PYTHONPATH="/opt/vla_jepa_train/src:${PYTHONPATH:-}"
+
+python3 -u -m vla_jepa_online.exploration.workspace_grid \
+  --vertices /opt/vla_jepa_train/configs/workspace_vertices.json \
+  --output /opt/vla_jepa_train/configs/workspace_grid.json \
+  --xy-step 0.085 \
+  --z-step 0.085 \
+  --min-end-gap 0.05
+
+
+Controllo della griglia
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+root = Path("/opt/vla_jepa_train/configs")
+
+vertices = json.loads((root / "workspace_vertices.json").read_text())
+grid = json.loads((root / "workspace_grid.json").read_text())
+
+print("HOME:", "OK" if vertices["home"] else "MANCANTE")
+print("Vertici acquisiti:", len(vertices["vertices"]), "/8")
+print("Frame:", grid["base_frame"], "->", grid["tcp_frame"])
+print("Dimensioni workspace:", grid["dimensions_m"])
+print("Dimensioni griglia:", grid["grid_shape"])
+print("Numero waypoint:", grid["num_waypoints"])
+print("Primo waypoint:", grid["waypoints"][0])
+print("Ultimo waypoint:", grid["waypoints"][-1])
+PY

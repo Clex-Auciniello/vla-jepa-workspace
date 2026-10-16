@@ -1,11 +1,11 @@
-"""Client ROS per pretraining online VLA-JEPA con archivio ZIP e upload asincrono verso Flask.
+"""Client ROS per pretraining online VLA-JEPA con PKL dataset_collector_pkg e upload ZIP.
 
 Il client muove il robot, registra in RAM e chiede approvazione manuale.
 Accettazione operatore: aggiorna IMMEDIATAMENTE ID e contatori del tracker.
 POST /train_episode viene effettuato in un thread separato; la registrazione
 successiva NON attende il training. Lo stato training non modifica le visite.
 
-Archivi ZIP persistenti su disco prima del POST, niente training qui, niente retry automatico
+PKL dataset_collector_pkg persistenti su disco prima del POST; ZIP in RAM per HTTP, niente retry automatico
 di POST ambiguo (un timeout non prova che il server non abbia ricevuto il video).
 """
 
@@ -158,9 +158,23 @@ class FlaskTrainingTransport:
         return str(status)
 
     def upload(self, task: UploadTask) -> str:
-        # Se archivio persistente, HTTP legge ESATTAMENTE gli stessi byte salvati.
-        payload = (task.archive_path.read_bytes() if task.archive_path is not None
-                   else self.encode(task))
+        # Il PKL persistente contiene {"traj": savers.Trajectory, ...}.
+        # Lo ZIP e' ricostruito solo in RAM, mantenendo il protocollo Flask.
+        if task.archive_path is not None:
+            meta, episode = TrajectorySaver.load_episode(task.archive_path)
+            if (meta["episode_id"] != task.episode_id
+                    or meta["table_mode"] != task.table_mode
+                    or tuple(meta["waypoint_ids"]) != task.waypoint_ids
+                    or meta["start_waypoint_id"] != task.start_waypoint_id):
+                raise TrainingSubmissionError(
+                    f"Metadati PKL diversi dall'upload per {task.episode_id}"
+                )
+            payload = self.encode(UploadTask(
+                task.episode_id, task.table_mode, task.waypoint_ids,
+                episode, task.start_waypoint_id,
+            ))
+        else:
+            payload = self.encode(task)
         request = Request(
             self.base_url + "/train_episode", data=payload,
             method="POST", headers={
@@ -173,7 +187,7 @@ class FlaskTrainingTransport:
 
 
 class AsyncTrainingSender:
-    """Invia in background gli ZIP persistiti a Flask, senza attendere il training.
+    """Invia ZIP costruiti dai PKL in background, senza attendere il training.
 
     Trasmette eventuali esiti/errori del POST al thread principale solo per
     visualizzarli: NON modifica ID o conteggi degli episodi accettati.
@@ -233,7 +247,7 @@ class AsyncTrainingSender:
                 with self._state_lock:
                     self._inflight = None
                 self.uploads.task_done()
-                del task  # in modalita' persistente tiene solo il path ZIP
+                del task  # in modalita' persistente tiene solo il path PKL
 
     def shutdown(self) -> None:
         """Attende solo che terminino i POST in coda, non il training Flask."""
@@ -269,7 +283,7 @@ class ExplorationClient:
             if event.status == "upload_error":
                 self.report(
                     f"[CLIENT POST] {event.episode_id}: ERRORE {event.message}. "
-                    "ZIP conservato; nessun retry automatico."
+                    "PKL conservato; nessun retry automatico."
                 )
             else:
                 self.report(
@@ -349,7 +363,7 @@ class ExplorationClient:
         mode: str | None = None
         home_ready = False
         self.sender.start()
-        self.report(f"Client VLA-JEPA: ZIP persistenti in {self.saver.root}; "
+        self.report(f"Client VLA-JEPA: PKL dataset_collector_pkg persistenti in {self.saver.root}; "
                     "upload/training asincroni via Flask.")
         try:
             while True:
@@ -445,32 +459,34 @@ class ExplorationClient:
                         break
                     continue
 
-                # Backpressure HTTP: il sender contiene percorsi ZIP, non immagini.
+                # Backpressure HTTP: il sender contiene percorsi PKL, non immagini.
                 while not self.sender.can_enqueue():
                     self.report("Coda upload RAM piena: attendi che finisca un INVIO HTTP "
                                 "(non il training) prima di accettare questo episodio.")
                     time.sleep(0.5)
                     self._drain_training_events()
-                # La traiettoria viene salvata PRIMA di consumare ID/contatori,
-                # usando ESATTAMENTE lo stesso ZIP che verrà inviato a Flask.
+                # Il PKL dataset_collector_pkg viene salvato PRIMA di aggiornare il tracker.
+                # Il sender costruisce poi lo ZIP in RAM, senza salvarlo su disco.
                 if any(f.robot_state is None or f.commanded_action is None
                        for f in episode.frames):
                     self.tracker.discard_episode(episode_id)
                     raise RuntimeError(
                         "Episodio privo di stato o comando per almeno un frame: upload bloccato"
                     )
-                packed = FlaskTrainingTransport.encode(
-                    UploadTask(episode_id, mode, plan.waypoint_ids, episode, start_id)
-                )
                 try:
-                    archive_path = self.saver.save(episode_id, packed)
-                except OSError as exc:
+                    archive_path = self.saver.save(
+                        episode_id, episode,
+                        table_mode=mode,
+                        waypoint_ids=plan.waypoint_ids,
+                        start_waypoint_id=start_id,
+                    )
+                except (OSError, ValueError, TypeError, RuntimeError) as exc:
                     self.tracker.discard_episode(episode_id)
-                    raise RuntimeError(f"Salvataggio traiettoria fallito (nessun POST): {exc}") from exc
+                    raise RuntimeError(f"Salvataggio PKL fallito (nessun POST): {exc}") from exc
                 self._last_saved_id = episode_id
                 self._last_saved_path = archive_path
                 self._last_post_result = "salvato, in attesa di invio"
-                self.report(f"[CLIENT] ZIP salvato: {episode_id} -> {archive_path}")
+                self.report(f"[CLIENT] PKL salvato: {episode_id} -> {archive_path}")
                 self.tracker.accept_episode(episode_id, plan.waypoint_ids, start_id)
                 # Il sender mantiene in RAM solo il percorso, non le immagini.
                 self.sender.enqueue(UploadTask(
