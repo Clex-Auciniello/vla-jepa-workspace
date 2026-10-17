@@ -144,6 +144,14 @@ class OnlineVideoTrainer:
             raise ValueError("Strategia A: usare un checkpoint completo senza PEFT")
         if model_cfg.num_video_frames != 8 or model_cfg.jepa_tubelet_size != 2:
             raise ValueError("Questa pipeline richiede 8 frame e 2 viste")
+
+        if not hasattr(model_cfg, "causal_world_model_context"):
+            raise RuntimeError(
+                "La versione importata di LeRobot non supporta "
+                "causal_world_model_context"
+            )
+
+        model_cfg.causal_world_model_context = True
         model_cfg.device = str(self.device)
 
         self.policy = VLAJEPAPolicy.from_pretrained(

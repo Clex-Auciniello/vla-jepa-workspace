@@ -136,7 +136,9 @@ cd /opt/vla_jepa_train
 
 export VENV="/home/ros2_ws/src/ai_controller/ai_controller/models/vla_jepa_controller/venv/vla_jepa_venv"
 
-export PYTHONPATH="/opt/vla_jepa_train/src:${PYTHONPATH:-}"
+export LEROBOT_TRAIN="/opt/vla_jepa_train/external/lerobot"
+
+export PYTHONPATH="$LEROBOT_TRAIN/src:/opt/vla_jepa_train/src:${PYTHONPATH:-}"
 
 export HF_HOME="/opt/vla_jepa/huggingface"
 export HF_HUB_CACHE="$HF_HOME/hub"
@@ -155,6 +157,9 @@ set -o pipefail
   --predictor-lr 1e-5 \
   --seed 1000 \
   2>&1 | tee logs/online_server.log
+
+
+
 
 
 # Sesto terminale
