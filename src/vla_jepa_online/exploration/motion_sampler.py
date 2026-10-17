@@ -1,7 +1,7 @@
 """Campiona i target e gli eventi di una traiettoria esplorativa UR5e.
 
 Il random walker seleziona gli ID nominali dei waypoint. Questo modulo:
-- applica una piccola perturbazione XYZ negli assi locali del volume misurato;
+- applica una piccola perturbazione XYZ cartesiana in base_link;
 - estrae eventi di rotazione e gripper per waypoint, in base a quota e tavolo;
 - impone i limiti globali di sicurezza concordati per ogni traiettoria.
 
@@ -29,7 +29,7 @@ class MotionSamplerConfig:
     gripper_close_prob: Mapping[str, Mapping[str, float]]
     gripper_reopen_prob: Mapping[str, Mapping[str, float]]
 
-    # Perturbazioni lungo gli assi locali del workspace, in metri.
+    # Perturbazioni cartesiane in base_link, in metri.
     xy_jitter_m: float
     z_jitter_pick_up_m: float
     z_jitter_transfer_m: float
@@ -89,24 +89,6 @@ class MotionPlan:
 
 
 
-def _lerp(a: Sequence[float], b: Sequence[float], t: float) -> tuple[float, float, float]:
-    """Interpolazione lineare tra due punti 3D."""
-    return tuple((1.0 - t) * x + t * y for x, y in zip(a, b))
-
-
-def _interpolate(
-    corners: Mapping[str, Sequence[float]], fx: float, fy: float, fz: float
-) -> tuple[float, float, float]:
-    """Coordinate locali normalizzate -> XYZ in base_link usando gli 8 vertici."""
-    bottom_back = _lerp(corners["V000"], corners["V100"], fx)
-    bottom_front = _lerp(corners["V010"], corners["V110"], fx)
-    top_back = _lerp(corners["V001"], corners["V101"], fx)
-    top_front = _lerp(corners["V011"], corners["V111"], fx)
-    bottom = _lerp(bottom_back, bottom_front, fy)
-    top = _lerp(top_back, top_front, fy)
-    return _lerp(bottom, top, fz)
-
-
 class MotionSampler:
     def __init__(self, config: MotionSamplerConfig):
         self.cfg = config
@@ -137,24 +119,19 @@ class MotionSampler:
         return cls(MotionSamplerConfig.from_yaml(path))
 
     def _perturb(self, grid: dict, wp: dict, rng: random.Random) -> tuple[float, float, float]:
-        """Jitter negli assi del workspace, poi conversione in base_link.
+        """Applica il jitter XYZ in base_link, partendo dal waypoint nominale.
 
-        Gli assi locali sono definiti dagli otto vertici in grid["vertices"],
-        non si assume che siano paralleli a quelli di base_link.
-
-        Nessun clamp e nessuna correzione/scarto del jitter XY per piccoli
-        dislivelli tra vertici: il margine fisico ai bordi e' a carico della
-        misura del workspace e della successiva verifica di esecuzione.
+        Per i waypoint extra_front la perturbazione Y e' solo negativa.
         """
-        dims = grid["dimensions_m"]
-        offsets = grid["sampling"]["axis_offsets_m"]
-        i, j, k = int(wp["i"]), int(wp["j"]), int(wp["k"])
-        last_k = len(offsets["z"]) - 1
+        x, y, z = (float(value) for value in wp["position"])
+        k = int(wp["k"])
+        last_k = max(int(point["k"]) for point in grid["waypoints"])
 
-        # Coordinate nominali in metri lungo gli assi LOCALI della griglia.
-        x = offsets["x"][i] + rng.uniform(-self.cfg.xy_jitter_m, self.cfg.xy_jitter_m)
-        y = offsets["y"][j] + rng.uniform(-self.cfg.xy_jitter_m, self.cfg.xy_jitter_m)
-        z = offsets["z"][k]
+        x += rng.uniform(-self.cfg.xy_jitter_m, self.cfg.xy_jitter_m)
+        y += rng.uniform(
+            -self.cfg.xy_jitter_m,
+            0.0 if wp.get("extra_front", False) else self.cfg.xy_jitter_m,
+        )
 
         if k == 0:
             z += rng.uniform(0.0, self.cfg.z_jitter_pick_up_m)
@@ -163,16 +140,7 @@ class MotionSampler:
         else:
             z += rng.uniform(-self.cfg.z_jitter_transfer_m, self.cfg.z_jitter_transfer_m)
 
-        # Le frazioni (fx, fy, fz) individuano il punto nel volume misurato.
-        # L'orientamento rispetto a base_link e' implicito nelle coordinate
-        # XYZ reali degli otto vertici: non serve leggere un angolo separato.
-        target = _interpolate(
-            grid["vertices"],
-            x / dims["x"],
-            y / dims["y"],
-            z / dims["z"],
-        )
-        return tuple(round(float(value), 6) for value in target)
+        return tuple(round(value, 6) for value in (x, y, z))
 
     def sample(
         self,

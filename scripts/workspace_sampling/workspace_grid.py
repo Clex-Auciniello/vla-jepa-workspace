@@ -1,214 +1,239 @@
 #!/usr/bin/env python3
-"""Genera la griglia 3D a partire dai vertici misurati con workspace_vertex_collector.py.
+"""Genera da ZERO il reticolo cartesiano UR5e dai SOLI 8 vertici misurati/raffinati.
 
-- Spaziatura nominale 8.5 cm su X, Y e Z (modificabile da CLI).
-- Aggiunge l'estremo finale soltanto se il residuo supera 5 cm.
-- Interpola gli 8 vertici misurati: funziona anche con il volume ruotato
-  rispetto a base_link e con piccole imprecisioni nella misura.
-- Esporta JSON + CSV. 
+Regole della configurazione approvata:
+- coordinate base_link, reticolo cartesiano globale (non trilineare);
+- passo esatto 0.085 m in X/Y/Z sulle righe regolari;
+- origine fissata alla griglia concordata: (0.245, 0.287, -0.077) m;
+- conserva solo i punti all'interno dell'inviluppo convesso degli 8 vertici;
+- aggiunge su Z0 e Z1 una riga anteriore: Y del limite della parete a Z1,
+  arretrata di 1 mm, stessa Y per entrambi i livelli;
+- le ultime due righe distano ~4.55 cm in Y (eccezione intenzionale);
+- salva il JSON dei waypoint con posizione cartesiana assoluta.
+
+Non legge JSON di waypoint preesistenti. Richiede: numpy, scipy.
+
+Esempio:
+    python genera_reticolo_workspace.py \
+        --vertices workspace_vertices_refined_input.json \
+        --output workspace_grid_143.json
+
+Il reticolo indica solo un insieme di target TCP geometricamente interni:
+NON certifica collisioni, reachability o sicurezza delle traiettorie.
+Il MotionSampler ROS attuale deve essere aggiornato per le perturbazioni.
 """
+from __future__ import annotations
 
 import argparse
-import csv
 import json
 import math
 from pathlib import Path
 
+import numpy as np
+from scipy.spatial import ConvexHull
 
-# Valori iniziali concordati (metri).
-XY_STEP_M = 0.085
-Z_STEP_M = 0.085
-END_GAP_THRESHOLD_M = 0.05
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_VERTICES = REPO_ROOT / "configs" / "workspace_vertices.json"
-DEFAULT_OUTPUT = REPO_ROOT / "configs" / "workspace_grid.json"
-
-VERTEX_IDS = ("V000", "V100", "V010", "V110", "V001", "V101", "V011", "V111")
-EDGES = {
-    "x": (("V000", "V100"), ("V010", "V110"), ("V001", "V101"), ("V011", "V111")),
-    "y": (("V000", "V010"), ("V100", "V110"), ("V001", "V011"), ("V101", "V111")),
-    "z": (("V000", "V001"), ("V100", "V101"), ("V010", "V011"), ("V110", "V111")),
-}
+VERTEX_IDS = ('V000','V100','V010','V110','V001','V101','V011','V111')
+DEFAULT_STEP = 0.085
+DEFAULT_ORIGIN = (0.245, 0.287, -0.077)
+DEFAULT_WALL_INSET_MM = 1.0
 
 
-def read_vertices(path):
-    """Restituisce metadata, HOME e coordinate dei vertici in base_link."""
-    data = json.loads(path.read_text(encoding="utf-8"))
-    rows = data.get("vertices", [])
-    by_id = {row["vertex_id"]: row for row in rows}
-    if len(rows) != 8 or set(by_id) != set(VERTEX_IDS):
-        raise ValueError("Il JSON deve contenere esattamente V000, V100, V010, V110, V001, V101, V011, V111")
-    if data.get("home") is None:
-        raise ValueError("Manca HOME nel JSON del collector")
-
-    corners = {}
-    for vertex_id in VERTEX_IDS:
-        row = by_id[vertex_id]
-        point = tuple(float(row[key]) for key in ("x_m", "y_m", "z_m"))
-        if not all(math.isfinite(value) for value in point):
-            raise ValueError(f"Coordinate non valide per {vertex_id}")
-        corners[vertex_id] = point
-    return data, corners
+def read_vertices(path: Path):
+    data = json.loads(path.read_text(encoding='utf-8'))
+    raw = data.get('vertices')
+    if not isinstance(raw, list) or len(raw) != 8:
+        raise ValueError('Il JSON deve contenere esattamente 8 vertici')
+    if data.get('home') is None:
+        raise ValueError('Il JSON deve contenere HOME')
+    if {v.get('vertex_id') for v in raw} != set(VERTEX_IDS):
+        raise ValueError('ID vertici inattesi o duplicati')
+    vertices = {
+        v['vertex_id']: np.array([float(v['x_m']), float(v['y_m']), float(v['z_m'])])
+        for v in raw
+    }
+    if not all(np.isfinite(v).all() for v in vertices.values()):
+        raise ValueError('Coordinate dei vertici non finite')
+    return data, vertices
 
 
-def axis_length(corners, axis):
-    """Lunghezza media dei quattro spigoli paralleli all'asse locale."""
-    lengths = [math.dist(corners[a], corners[b]) for a, b in EDGES[axis]]
-    return sum(lengths) / len(lengths)
+def inside(point: np.ndarray, hull: ConvexHull, tolerance: float = 1e-9) -> bool:
+    return bool(np.all(hull.equations[:,:3] @ point + hull.equations[:,3] <= tolerance))
 
 
-def sample_axis(length, step, threshold):
-    """0, step, 2*step, ...; aggiunge length solo se il residuo > threshold."""
-    if length <= 0 or step <= 0 or threshold < 0:
-        raise ValueError("Lunghezze e passi devono essere positivi; soglia >= 0")
-    n = math.floor((length + 1e-9) / step)
-    samples = [min(i * step, length) for i in range(n + 1)]
-    if length - samples[-1] > threshold + 1e-9:
-        samples.append(length)
-    return samples
+def max_front_y_at_xz(x: float, z: float, hull: ConvexHull) -> float:
+    """Intersezione con la parete a Y massimo dei semispazi del convex hull."""
+    upper, lower = [], []
+    for a,b,c,d in hull.equations:
+        rhs = -a*x - c*z - d
+        if b > 1e-10:
+            upper.append(rhs / b)
+        elif b < -1e-10:
+            lower.append(rhs / b)
+        elif rhs < -1e-9:
+            raise ValueError(f'La retta a X={x:.4f}, Z={z:.4f} non incontra il volume')
+    if not upper:
+        raise ValueError('La geometria non definisce una parete anteriore Y+')
+    ymax = float(min(upper))
+    if lower and ymax < max(lower)-1e-9:
+        raise ValueError('Nessuna intersezione valida lungo Y')
+    return ymax
 
 
-def lerp(a, b, t):
-    return tuple((1.0 - t) * x + t * y for x, y in zip(a, b))
+def build(data: dict, vertices: dict, step: float, origin: np.ndarray,
+          wall_inset_mm: float, expected_count: int | None):
+    if step <= 0 or not math.isfinite(step):
+        raise ValueError('Passo deve essere positivo e finito')
+    if wall_inset_mm < 0 or not math.isfinite(wall_inset_mm):
+        raise ValueError('wall_inset_mm deve essere >= 0 e finito')
+    if not np.isfinite(origin).all():
+        raise ValueError('Origine non finita')
 
+    points = np.vstack([vertices[k] for k in VERTEX_IDS])
+    hull = ConvexHull(points)
+    mins, maxs = points.min(axis=0), points.max(axis=0)
+    if not np.all((origin > mins) & (origin < maxs)):
+        raise ValueError('Origine fuori dal bounding box del poliedro')
 
-def interpolate(corners, fx, fy, fz):
-    """Interpolazione trilineare: usa tutti gli 8 vertici misurati."""
-    bottom_back = lerp(corners["V000"], corners["V100"], fx)  # un punto tra i 2 vertici del bordo inferiore dietro, se fx = 0.5 si trova a metà
-    bottom_front = lerp(corners["V010"], corners["V110"], fx) # stesso punto sul bordo inferiore avanti
-    top_back = lerp(corners["V001"], corners["V101"], fx)     # stesso punto sul bordo superiore dietro
-    top_front = lerp(corners["V011"], corners["V111"], fx)    # stesso punto sul bordo superiore avanti
-    bottom = lerp(bottom_back, bottom_front, fy)              # punto sul fondo tra i due punti intermedi trovati
-    top = lerp(top_back, top_front, fy)                       # stesso punto ma sul soffitto
-    return lerp(bottom, top, fz)                              # stesso punto ma tra il soffitto e il fondo
-
-
-def build_grid(data, corners, xy_step, z_step, threshold):
-    lengths = {axis: axis_length(corners, axis) for axis in "xyz"}
-    xs = sample_axis(lengths["x"], xy_step, threshold)
-    ys = sample_axis(lengths["y"], xy_step, threshold)
-    zs = sample_axis(lengths["z"], z_step, threshold)
-
-    if len(xs) < 2 or len(ys) < 2 or len(zs) < 2:
-        raise ValueError("Workspace troppo piccolo rispetto a passo e soglia: uno degli assi ha meno di 2 nodi")
-    if sum(corners[key][2] for key in ("V001", "V101", "V011", "V111")) <= sum(
-        corners[key][2] for key in ("V000", "V100", "V010", "V110")
-    ):
-        raise ValueError("I vertici ALTI non risultano sopra quelli BASSI in base_link")
+    # Convenzione i cresce verso -X; j cresce verso +Y; k verso +Z.
+    nx = math.ceil((origin[0]-mins[0])/step)+1
+    ny = math.ceil((maxs[1]-origin[1])/step)+1
+    nz = math.ceil((maxs[2]-origin[2])/step)+1
 
     waypoints = []
-    for k, z in enumerate(zs):
-        for j, y in enumerate(ys):
-            for i, x in enumerate(xs):
-                px, py, pz = interpolate(
-                    corners, x / lengths["x"], y / lengths["y"], z / lengths["z"]
-                )
-                waypoints.append({
-                    "id": len(waypoints),
-                    "i": i,
-                    "j": j,
-                    "k": k,
-                    "position": [round(px, 6), round(py, 6), round(pz, 6)],
-                    "level": "PICK" if k == 0 else "TRANSFER",
-                })
+    for k in range(nz):
+        for j in range(ny):
+            for i in range(nx):
+                xyz = origin + np.array((-i*step, j*step, k*step))
+                if inside(xyz,hull):
+                    waypoints.append({
+                        'i': i, 'j': j, 'k': k,
+                        'position': [round(float(v),6) for v in xyz],
+                        'level': 'PICK' if k == 0 else 'TRANSFER',
+                        'extra_front': False,
+                    })
+    nominal_count = len(waypoints)
+    if nz < 2:
+        raise ValueError('Servono almeno due livelli Z')
 
+    # Ultima riga esistente con una o più colonne presenti su ENTRAMBI Z0/Z1.
+    rows0 = {w['j'] for w in waypoints if w['k']==0}
+    rows1 = {w['j'] for w in waypoints if w['k']==1}
+    common_rows = rows0 & rows1
+    if not common_rows:
+        raise ValueError('Nessuna riga comune a Z0 e Z1')
+    j_last = max(common_rows)
+    cols0 = {w['i'] for w in waypoints if w['j']==j_last and w['k']==0}
+    cols1 = {w['i'] for w in waypoints if w['j']==j_last and w['k']==1}
+    cols = sorted(cols0 & cols1)
+    if not cols:
+        raise ValueError('Nessuna colonna condivisa sulle ultime righe Z0/Z1')
+
+    y_previous = float(origin[1] + j_last*step)
+    z0, z1 = float(origin[2]), float(origin[2]+step)
+    wall_limits = {i: max_front_y_at_xz(float(origin[0]-i*step), z1, hull) for i in cols}
+    y_wall = min(wall_limits.values())
+    y_new = y_wall - wall_inset_mm/1000.0
+    if y_new <= y_previous+1e-9:
+        raise ValueError('Nessuno spazio per riga place supplementare')
+
+    # Indice j distinto; il valore Y è volutamente NON origin_y + j*step.
+    j_new = max(w['j'] for w in waypoints) + 1
+    for k, z in ((0,z0),(1,z1)):
+        for i in cols:
+            xyz = np.array((float(origin[0]-i*step), y_new,z))
+            if not inside(xyz,hull):
+                raise ValueError(f'Riga frontale esterna per i={i}, k={k}: {xyz}')
+            waypoints.append({
+                'i':i,'j':j_new,'k':k,
+                'position':[round(float(v),6) for v in xyz],
+                'level':'PICK' if k==0 else 'TRANSFER',
+                'extra_front':True,
+            })
+
+    waypoints.sort(key=lambda w: (w['k'],w['j'],w['i']))
+    for identifier, wp in enumerate(waypoints):
+        wp['id']=identifier
+
+    # Controllo: distanze dei vicini ordinari 8.5 cm;
+    # una e una sola differenza in Y sulle righe finali supplementari.
+    idx = {(w['i'],w['j'],w['k']): np.array(w['position']) for w in waypoints}
+    for w in waypoints:
+        i,j,k = w['i'],w['j'],w['k']
+        p = idx[(i,j,k)]
+        for ax, delta in enumerate(((1,0,0),(0,1,0),(0,0,1))):
+            key = (i+delta[0],j+delta[1],k+delta[2])
+            q = idx.get(key)
+            if q is None:
+                continue
+            d = float(np.linalg.norm(q-p))
+            if ax==1 and ((w['extra_front'] or
+                           any(v['extra_front'] for v in waypoints if (v['i'],v['j'],v['k'])==key))):
+                # Questo caso è gestito sotto per evitare confusione: la nuova
+                # riga rappresenta la sola eccezione al passo cartesiano fisso.
+                continue
+            if ax == 1 and key[1]==j_new:
+                continue
+            if abs(d-step)>2e-6:
+                raise RuntimeError(f'Distanza non conforme {d:.6f} m: {w["id"]} -> {key}')
+    if expected_count is not None and len(waypoints) != expected_count:
+        raise RuntimeError(f'Attesi {expected_count} waypoint, ottenuti {len(waypoints)}. '
+                           'Verifica vertici, origine e parametri.')
+
+    levels = {str(k):sum(w['k']==k for w in waypoints) for k in range(nz)}
     return {
-        "base_frame": data.get("base_frame", "base_link"),
-        "tcp_frame": data.get("tcp_frame", "tcp_link"),
-        "home": data["home"],
-        "vertices": {name: list(corners[name]) for name in VERTEX_IDS},
-        "dimensions_m": {name: round(value, 6) for name, value in lengths.items()},
-        "sampling": {
-            "xy_step_m": xy_step,
-            "z_step_m": z_step,
-            "end_gap_threshold_m": threshold,
-            "axis_offsets_m": {
-                "x": [round(x, 6) for x in xs],
-                "y": [round(y, 6) for y in ys],
-                "z": [round(z, 6) for z in zs],
-            },
+        'base_frame':data.get('base_frame','base_link'),
+        'tcp_frame':data.get('tcp_frame','tcp_link'),
+        'home':data['home'],
+        'vertices':{k:vertices[k].tolist() for k in VERTEX_IDS},
+        'preview_only':True,
+        'warning':('Reticolo geometrico. Non utilizzare per comandare il robot prima '
+                   'di aggiornare MotionSampler e validare collisioni/traiettorie.'),
+        'sampling':{
+            'step_m':step,
+            'lattice_origin_m':origin.tolist(),
+            'index_direction':{'i':'-X','j':'+Y','k':'+Z'},
+            'wall_inset_mm':wall_inset_mm,
+            'last_regular_y_m':y_previous,
+            'front_boundary_y_at_z1_m':y_wall,
+            'extra_row_y_m':y_new,
+            'distance_previous_to_extra_cm':(y_new-y_previous)*100,
+            'distance_previous_to_wall_cm':(y_wall-y_previous)*100,
+            'extra_row_j':j_new,
+            'extra_row_i':cols,
+            'n_nominal':nominal_count,
+            'n_added':len(waypoints)-nominal_count,
+            'n_total':len(waypoints),
+            'per_level_count':levels,
         },
-        "grid_shape": {"nx": len(xs), "ny": len(ys), "nz": len(zs)},
-        "num_waypoints": len(waypoints),
-        "waypoints": waypoints,
+        'grid_shape_bounds':{'nx':nx,'ny':ny,'nz':nz},
+        'num_waypoints':len(waypoints),
+        'waypoints':waypoints,
     }
 
 
-def save_grid(grid, output):
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(grid, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    csv_path = output.with_suffix(".csv")
-    with csv_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(("waypoint_id", "i", "j", "k", "level", "x_m", "y_m", "z_m"))
-        for wp in grid["waypoints"]:
-            writer.writerow((wp["id"], wp["i"], wp["j"], wp["k"], wp["level"], *wp["position"]))
-    return csv_path
-
-
-def save_plot(grid, path):
-    """Visualizzazione offline opzionale: python workspace_grid.py --plot."""
-    try:
-        import matplotlib
-        matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
-    except ImportError as exc:
-        raise RuntimeError("Per --plot installa matplotlib: pip install matplotlib") from exc
-
-    fig = plt.figure(figsize=(9, 7))
-    ax = fig.add_subplot(111, projection="3d")
-    waypoints = grid["waypoints"]
-    for level, label in (("PICK", "Z0 - PICK"), ("TRANSFER", "Z superiori")):
-        coords = [wp["position"] for wp in waypoints if wp["level"] == level]
-        ax.scatter([p[0] for p in coords], [p[1] for p in coords],
-                   [p[2] for p in coords], s=8, alpha=0.7, label=label)
-
-    corners = grid["vertices"]
-    for pairs in EDGES.values():
-        for a, b in pairs:
-            ax.plot([corners[a][0], corners[b][0]],
-                    [corners[a][1], corners[b][1]],
-                    [corners[a][2], corners[b][2]], linewidth=1, alpha=0.6)
-    ax.set(xlabel="X base_link (m)", ylabel="Y base_link (m)",
-           zlabel="Z base_link (m)", title=f"Workspace: {len(waypoints)} waypoint")
-    ax.legend()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=160, bbox_inches="tight")
-    plt.close(fig)
-
-
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--vertices", type=Path, default=DEFAULT_VERTICES)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--xy-step", type=float, default=XY_STEP_M, help="Passo XY in metri")
-    parser.add_argument("--z-step", type=float, default=Z_STEP_M, help="Passo Z in metri")
-    parser.add_argument("--min-end-gap", type=float, default=END_GAP_THRESHOLD_M,
-                        help="Includi estremo finale se residuo > soglia (metri)")
-    parser.add_argument("--plot", action="store_true", help="Salva anche il grafico 3D in outputs/")
-    args = parser.parse_args()
+    root=Path(__file__).resolve().parent
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--vertices',type=Path,default=root/'workspace_vertices_refined_input.json')
+    parser.add_argument('--output',type=Path,default=root/'workspace_grid_143.json')
+    parser.add_argument('--step-m',type=float,default=DEFAULT_STEP)
+    parser.add_argument('--origin',nargs=3,type=float,default=DEFAULT_ORIGIN,metavar=('X','Y','Z'))
+    parser.add_argument('--wall-inset-mm',type=float,default=DEFAULT_WALL_INSET_MM)
+    parser.add_argument('--expected-count',type=int,default=143,
+                        help='Controllo del numero totale; -1 per disattivare')
+    args=parser.parse_args()
+    data,vertices=read_vertices(args.vertices)
+    result=build(data,vertices,args.step_m,np.array(args.origin,dtype=float),
+                 args.wall_inset_mm, None if args.expected_count == -1 else args.expected_count)
+    args.output.parent.mkdir(parents=True,exist_ok=True)
+    args.output.write_text(json.dumps(result,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+    meta=result['sampling']
+    print(f"Creato: {args.output.resolve()}")
+    print(f"Waypoint: {result['num_waypoints']} = {meta['n_nominal']} regolari + {meta['n_added']} supplementari")
+    print('Per quota: '+', '.join(f"Z{k}: {n}" for k,n in meta['per_level_count'].items()))
+    print(f"Ultima riga Y = {meta['last_regular_y_m']:.6f} m; nuova Y = {meta['extra_row_y_m']:.6f} m")
+    print(f"Intervallo Y finale = {meta['distance_previous_to_extra_cm']:.3f} cm")
+    print('AVVISO: reticolo geometrico, non ancora pronto per esecuzione ROS.')
 
-    data, corners = read_vertices(args.vertices)
-    grid = build_grid(data, corners, args.xy_step, args.z_step, args.min_end_gap)
-    csv_path = save_grid(grid, args.output)
-    shape = grid["grid_shape"]
-
-    print("\n=== Workspace grid ===")
-    print(f"Vertici: {args.vertices}")
-    print(f"Dimensioni stimate (m): {grid['dimensions_m']}")
-    print(f"Passo XY: {args.xy_step:.3f} m | Z: {args.z_step:.3f} m")
-    print(f"Estremo aggiunto solo se residuo > {args.min_end_gap:.3f} m")
-    print(f"Griglia: {shape['nx']} x {shape['ny']} x {shape['nz']} = {grid['num_waypoints']} punti")
-    print(f"PICK: {shape['nx'] * shape['ny']} | TRANSFER: {grid['num_waypoints'] - shape['nx'] * shape['ny']}")
-    print(f"JSON: {args.output.resolve()}")
-    print(f"CSV:  {csv_path.resolve()}")
-
-    if args.plot:
-        plot_path = REPO_ROOT / "outputs" / "workspace_grid.png"
-        save_plot(grid, plot_path)
-        print(f"Plot: {plot_path.resolve()}")
-
-
-if __name__ == "__main__":
+if __name__=='__main__':
     main()
