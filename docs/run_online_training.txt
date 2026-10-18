@@ -173,3 +173,25 @@ python3 -u -m vla_jepa_online.exploration.exploration_client \
   --config /opt/vla_jepa_train/configs/exploration.yaml \
   --grid /opt/vla_jepa_train/configs/workspace_grid.json \
   --state /opt/vla_jepa_train/outputs/exploration_state.json
+
+
+
+
+
+
+
+# Settimo terminale client play
+docker exec -it ur_robotiq_teleoperation_container bash
+
+cd /home/ros2_ws
+source install/setup.bash
+
+export PYTHONPATH="/opt/vla_jepa_train/src:${PYTHONPATH:-}"
+
+Test — Esecuzione sul robot senza registrazione
+python3 -u -m vla_jepa_online.plays.client_plays \
+  --test \
+  --allow-experimental
+
+Default — Esecuzione training online
+python3 -u -m vla_jepa_online.plays.client_plays --upload --ack-updated-batch-builder

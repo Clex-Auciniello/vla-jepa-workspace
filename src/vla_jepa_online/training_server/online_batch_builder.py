@@ -93,7 +93,7 @@ class EpisodeWindow:
 
 
 def _read_manifest(zf: zipfile.ZipFile, cfg: OnlineBatchBuilderConfig) -> dict[str, Any]:
-    """Valida la struttura e i path prima di leggere i file JPEG."""
+    """Valida il manifest e i path prima di decodificare i PNG."""
     names = zf.namelist()
     if len(names) != len(set(names)):
         raise ValueError("Archivio con nomi di file ZIP duplicati")
@@ -132,12 +132,96 @@ def _read_manifest(zf: zipfile.ZipFile, cfg: OnlineBatchBuilderConfig) -> dict[s
         label = frame.get("motion_label")
         if label is not None and (not isinstance(label, str) or not label.strip()):
             raise ValueError(f"motion_label non valido per frame {expected_index}")
-    # Valida in anticipo le etichette di TUTTE le finestre selezionate.
-    # Cosi' un prompt mancante in fondo all'episodio viene rilevato prima di
-    # iniziare il training (evita aggiornamenti parziali per questa causa).
-    for start in range(0, len(frames) - cfg.window_size + 1, cfg.stride):
-        _prompt_for_window(frames[start : start + cfg.window_size])
+    plays = _is_plays_manifest(manifest)
+    if not plays:
+        # Percorso Exploration IDENTICO al precedente: controlla ciascuna
+        # finestra completa con la stessa funzione di prompt originale.
+        for start in range(0, len(frames) - cfg.window_size + 1, cfg.stride):
+            _prompt_for_window(frames[start : start + cfg.window_size])
     return manifest
+
+
+def _is_plays_manifest(manifest: Mapping[str, Any]) -> bool:
+    """I metadati selezionano SOLO il preprocessing, non vengono dati al trainer.
+
+    Exploration non include 'source'/'prompt_mode': resta retrocompatibile.
+    Plays usa prompt unico e finestra finale allineata (senza padding reale).
+    """
+    if manifest.get("source") == "plays":
+        if manifest.get("prompt_mode") != "episode_prompt":
+            raise ValueError("Plays richiede prompt_mode='episode_prompt'")
+        if manifest.get("terminal_padding") != "repeat_last":
+            raise ValueError("Plays richiede terminal_padding='repeat_last'")
+        prompt = manifest.get("episode_prompt")
+        if not isinstance(prompt, str) or not prompt.strip():
+            raise ValueError("Plays senza episode_prompt valido")
+        return True
+    if (manifest.get("prompt_mode") == "episode_prompt" or
+            manifest.get("terminal_padding") == "repeat_last"):
+        raise ValueError("Manifest con campi Plays, ma source diverso da 'plays'")
+    return False
+
+
+def _window_starts(num_frames: int, *, window_size: int, stride: int,
+                   repeat_last: bool) -> list[int]:
+    """Inizi finestre; Exploration = solo finestre complete, senza modifiche.
+
+    Per Plays riallinea SOLO l'ultima finestra di 8 frame REALI all'ultimo
+    frame dell'episodio (nessuna duplicazione e nessuna finestra aggiuntiva).
+    Gli inizi precedenti conservano stride nominale 5.
+    `repeat_last` e' mantenuto come parametro storico di compatibilita'
+    con il manifest Plays terminal_padding='repeat_last'.
+    """
+    if window_size <= 0 or stride <= 0:
+        raise ValueError("window_size e stride devono essere positivi")
+    if num_frames < window_size:
+        return []
+    starts = list(range(0, num_frames - window_size + 1, stride))
+    if repeat_last and starts[-1] + window_size < num_frames:
+        # Modifica soltanto l'ultimo start; mantiene il numero di finestre.
+        # Per 15 frame: start 0,5 -> 0,7 (finestre 1-8 e 8-15).
+        # Con 9-12 frame c'e' una sola finestra, ancorata alla fine.
+        starts[-1] = num_frames - window_size
+    return starts
+
+
+def _validate_all_pngs(zf: zipfile.ZipFile, manifest: Mapping[str, Any],
+                       cfg: OnlineBatchBuilderConfig) -> None:
+    """Preflight di TUTTI i PNG, prima di qualsiasi forward/backward.
+
+    Verifica formato PNG, CRC/struttura con verify(), pixel effettivamente
+    decodificabili con load(), crop applicabile e dimensioni coerenti per vista.
+    Non effettua resize, normalizzazione o preparazione dei tensori.
+    """
+    sizes: dict[str, tuple[int, int]] = {}
+    for frame in manifest["frames"]:
+        for camera, field, crop in (
+            ("front", "front_path", cfg.front_crop),
+            ("gripper", "gripper_path", cfg.gripper_crop),
+        ):
+            path = frame[field]
+            try:
+                data = zf.read(path)
+                with Image.open(io.BytesIO(data)) as img:
+                    if img.format != "PNG":
+                        raise ValueError("Formato non PNG")
+                    size = img.size
+                    if size[0] <= 0 or size[1] <= 0:
+                        raise ValueError("Dimensioni PNG non valide")
+                    img.verify()  # verifica chunk e CRC (incl. dati IDAT)
+                with Image.open(io.BytesIO(data)) as img:
+                    img.load()    # verifica che i pixel siano decodificabili
+                    img.convert("RGB").load()
+                if crop is not None:
+                    if (crop.left < 0 or crop.top < 0 or crop.right < 0 or crop.bottom < 0 or
+                            size[0] - crop.left - crop.right <= 0 or
+                            size[1] - crop.top - crop.bottom <= 0):
+                        raise ValueError(f"Crop non applicabile a immagine {size}: {crop}")
+                if camera in sizes and sizes[camera] != size:
+                    raise ValueError(f"Dimensione camera {camera} variabile: {sizes[camera]} -> {size}")
+                sizes[camera] = size
+            except (OSError, ValueError, EOFError) as exc:
+                raise ValueError(f"PNG {path} non valido: {exc}") from exc
 
 
 def _prompt_for_window(frames: list[Mapping[str, Any]]) -> str:
@@ -167,10 +251,9 @@ def _image_to_tensor(
     crop: CropMargins | None,
     image_size: tuple[int, int],
 ) -> torch.Tensor:
-    """Da JPEG RGB a uint8 [3,224,224]; nessuna normalizzazione ImageNet.
+    """Da PNG RGB a float32 [3,224,224] in [0,1], come nella baseline.
 
-    `VLAJEPAPolicy._prepare_model_inputs()` converte già uint8 -> PIL e il
-    processor V-JEPA esegue separatamente le proprie trasformazioni.
+    Il processor V-JEPA gestisce le trasformazioni successive.
     """
     with Image.open(io.BytesIO(zf.read(path))) as source:
         rgb = source.convert("RGB")
@@ -212,14 +295,11 @@ class OnlineBatchBuilder:
             raise ValueError("Le feature front e gripper devono essere distinte")
 
     def inspect_episode(self, archive: bytes | str | Path) -> dict[str, Any]:
-        """Valida manifest, path, label e limiti PRIMA della messa in coda.
-
-        Non decodifica i JPEG: il controllo completo di eventuali file immagine
-        corrotti avviene comunque durante la preparazione delle finestre.
-        """
+        """Valida manifest e TUTTI i PNG prima della messa in coda GPU."""
         source = io.BytesIO(archive) if isinstance(archive, bytes) else archive
         with zipfile.ZipFile(source, "r") as zf:
             manifest = _read_manifest(zf, self.cfg)
+            _validate_all_pngs(zf, manifest, self.cfg)
             return {
                 "episode_id": manifest["episode_id"],
                 "frames": len(manifest["frames"]),
@@ -227,6 +307,7 @@ class OnlineBatchBuilder:
                     len(manifest["frames"]),
                     window_size=self.cfg.window_size,
                     stride=self.cfg.stride,
+                    repeat_last=_is_plays_manifest(manifest),
                 ),
             }
 
@@ -240,15 +321,20 @@ class OnlineBatchBuilder:
         source = io.BytesIO(archive) if isinstance(archive, bytes) else archive
         with zipfile.ZipFile(source, "r") as zf:
             manifest = _read_manifest(zf, self.cfg)
+            # Anche nell'utilizzo standalone dell'iteratore controlliamo i PNG
+            # prima di produrre una finestra: nessun training parziale per
+            # corruzioni dei file che sono gia' presenti nello ZIP.
+            _validate_all_pngs(zf, manifest, self.cfg)
             frames: list[dict[str, Any]] = manifest["frames"]
             episode_id: str = manifest["episode_id"]
+            plays = _is_plays_manifest(manifest)
 
-            # Start 0, 5, 10, ...; le finestre sono SEMPRE contigue internamente.
-            for window_i, start in enumerate(
-                range(0, len(frames) - self.cfg.window_size + 1, self.cfg.stride)
-            ):
+            for window_i, start in enumerate(_window_starts(
+                len(frames), window_size=self.cfg.window_size,
+                stride=self.cfg.stride, repeat_last=plays,
+            )):
                 selected = frames[start : start + self.cfg.window_size]
-                task = _prompt_for_window(selected)
+                task = manifest["episode_prompt"] if plays else _prompt_for_window(selected)
                 front = torch.stack([
                     _image_to_tensor(zf, f["front_path"], self.cfg.front_crop, self.cfg.image_size)
                     for f in selected
@@ -270,8 +356,10 @@ class OnlineBatchBuilder:
                 )
 
     @staticmethod
-    def count_windows(num_frames: int, *, window_size: int = 8, stride: int = 5) -> int:
-        """Numero di finestre complete; gli ultimi frame residui non sono padded."""
-        if window_size <= 0 or stride <= 0:
-            raise ValueError("window_size e stride devono essere positivi")
-        return 0 if num_frames < window_size else (num_frames - window_size) // stride + 1
+    def count_windows(num_frames: int, *, window_size: int = 8, stride: int = 5,
+                      repeat_last: bool = False) -> int:
+        """Default Exploration invariato; repeat_last=True allinea ultimo Plays."""
+        return len(_window_starts(
+            num_frames, window_size=window_size,
+            stride=stride, repeat_last=repeat_last,
+        ))

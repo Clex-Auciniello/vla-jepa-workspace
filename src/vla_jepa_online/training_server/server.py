@@ -39,6 +39,29 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def _trainer_monitor_stats(trainer: Any) -> dict[str, int]:
+    """Telemetria E/P con sola lettura dei contatori del trainer.
+
+    Compatibile con trainer vecchi o fittizi: gli episodi senza classificazione
+    vengono esposti come legacy, non assegnati artificialmente a E o P.
+    """
+    video = getattr(trainer, "source_video_counts", {})
+    windows = getattr(trainer, "source_window_counts", {})
+    return {
+        "global_step": int(trainer.global_step),
+        "processed_videos": int(trainer.processed_videos),
+        "pending_windows": int(trainer.pending_windows),
+        "videos_exploration": int(video.get("E", 0)),
+        "videos_plays": int(video.get("P", 0)),
+        "windows_exploration": int(windows.get("E", 0)),
+        "windows_plays": int(windows.get("P", 0)),
+        "videos_other": int(video.get("other", 0)),
+        "videos_legacy": int(getattr(trainer, "legacy_unclassified_videos", 0)
+                             if hasattr(trainer, "source_video_counts")
+                             else trainer.processed_videos),
+    }
+
+
 def _checkpoint_latest(root: Path) -> Path | None:
     """Restituisce lo slot completo piu' recente, basandosi sui metadati.
 
@@ -511,15 +534,7 @@ class TrainingService:
             with self._cv:
                 self._trainer = trainer
 
-                self._stats = {
-                    "global_step": int(trainer.global_step),
-                    "processed_videos": int(
-                        trainer.processed_videos
-                    ),
-                    "pending_windows": int(
-                        trainer.pending_windows
-                    ),
-                }
+                self._stats = _trainer_monitor_stats(trainer)
 
                 self._checkpointed_videos = (
                     int(trainer.processed_videos)
@@ -617,17 +632,7 @@ class TrainingService:
                         "error": None,
                     })
 
-                    self._stats = {
-                        "global_step": int(
-                            self._trainer.global_step
-                        ),
-                        "processed_videos": int(
-                            self._trainer.processed_videos
-                        ),
-                        "pending_windows": int(
-                            self._trainer.pending_windows
-                        ),
-                    }
+                    self._stats = _trainer_monitor_stats(self._trainer)
 
                     if result.get("checkpoint_path"):
 
@@ -708,11 +713,19 @@ def format_server_monitor(service: TrainingService, event: str = "STATUS") -> st
         loss = ongoing.get("latest_wm_loss")
         loss_text = f" loss={loss:.5f}" if isinstance(loss, (int, float)) else ""
         progress = f" [{bar}] {done}/{total} finestre{loss_text}"
+    counts = (
+        f" E={stats.get('videos_exploration', 0)}v/{stats.get('windows_exploration', 0)}w"
+        f" P={stats.get('videos_plays', 0)}v/{stats.get('windows_plays', 0)}w"
+    )
+    if stats.get("videos_legacy", 0):
+        counts += f" legacy={stats['videos_legacy']}v"
+    if stats.get("videos_other", 0):
+        counts += f" other={stats['videos_other']}v"
     return (
         f"[{event}] server={status['server']} | FIFO={status['queued']}/{status['queue_capacity']}"
         f" [{', '.join(ids) or '-'}] | GPU={current or '-'}{progress}"
-        f" | video={stats.get('processed_videos', '?')}"
-        f" step={stats.get('global_step', '?')}"
+        f" | video={stats.get('processed_videos', '?')}" + counts
+        + f" step={stats.get('global_step', '?')}"
         f" pending_windows={stats.get('pending_windows', '?')}"
         f" checkpointed={status['checkpointed_videos']}"
         f" | safe_to_stop={'TRUE' if status['safe_to_stop'] else 'FALSE'}"

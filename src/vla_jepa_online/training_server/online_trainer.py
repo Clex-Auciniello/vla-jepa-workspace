@@ -90,6 +90,12 @@ class OnlineVideoTrainer:
         self.global_step = 0            # numero di optimizer.step() effettuati
         self.processed_videos = 0       # episodi completati con successo
         self.completed_episode_ids: set[str] = set()  # deduplica solo nella sessione corrente (non su disco)
+        # Telemetria persistente per numero video E/P (ID), non dati/prompt.
+        # "other" raccoglie eventuali ID non standard; "legacy" i video dei
+        # checkpoint precedenti che non memorizzavano provenienza.
+        self.source_video_counts = {"E": 0, "P": 0, "other": 0}
+        self.source_window_counts = {"E": 0, "P": 0, "other": 0}
+        self.legacy_unclassified_videos = 0
         self.pending_windows = 0       # backward eseguiti, ancora senza optimizer.step()
         self._checkpoint_sequence = 0  # numero progressivo dei salvataggi completati
         self._requires_recovery = False  # errore in un episodio parzialmente addestrato
@@ -361,6 +367,11 @@ class OnlineVideoTrainer:
             # backward; non serve che i gradienti siano gia' stati applicati.
             self.processed_videos += 1
             self.completed_episode_ids.add(episode_id)
+            source = "E" if episode_id.startswith("E") else (
+                "P" if episode_id.startswith("P") else "other"
+            )
+            self.source_video_counts[source] += 1
+            self.source_window_counts[source] += windows
 
             checkpoint: Path | None = None
             if self.processed_videos % self.cfg.checkpoint_every_videos == 0:
@@ -462,7 +473,10 @@ class OnlineVideoTrainer:
                     "format_version": 3,
                     "global_step": self.global_step,
                     "processed_videos": self.processed_videos,
-                                        "optimizer": self.optimizer.state_dict(),
+                    "source_video_counts": dict(self.source_video_counts),
+                    "source_window_counts": dict(self.source_window_counts),
+                    "legacy_unclassified_videos": self.legacy_unclassified_videos,
+                    "optimizer": self.optimizer.state_dict(),
                     "base_pretrained_path": self.cfg.pretrained_path,
                     "batch_size": self.cfg.batch_size,
                     "gradient_accumulation_steps": self.cfg.gradient_accumulation_steps,
@@ -487,6 +501,9 @@ class OnlineVideoTrainer:
                     "checkpoint_sequence": next_sequence,
                     "processed_videos": self.processed_videos,
                     "global_step": self.global_step,
+                    "source_video_counts": dict(self.source_video_counts),
+                    "source_window_counts": dict(self.source_window_counts),
+                    "legacy_unclassified_videos": self.legacy_unclassified_videos,
                 }, indent=2) + "\n",
                 encoding="utf-8",
             )
@@ -521,6 +538,25 @@ class OnlineVideoTrainer:
         self.optimizer.load_state_dict(payload["optimizer"])
         self.global_step = int(payload["global_step"])
         self.processed_videos = int(payload["processed_videos"])
+        has_counters = "source_video_counts" in payload
+        # Checkpoint v3 piu' vecchi: NON attribuire arbitrariamente i
+        # video storici a Exploration, perche' la sorgente non era persistita.
+        self.legacy_unclassified_videos = int(payload.get(
+            "legacy_unclassified_videos", 0 if has_counters else self.processed_videos
+        ))
+        self.source_video_counts = {
+            k: int(payload.get("source_video_counts", {}).get(k, 0))
+            for k in ("E", "P", "other")
+        }
+        self.source_window_counts = {
+            k: int(payload.get("source_window_counts", {}).get(k, 0))
+            for k in ("E", "P", "other")
+        }
+        if (self.legacy_unclassified_videos < 0 or
+            any(x < 0 for x in self.source_video_counts.values()) or
+            any(x < 0 for x in self.source_window_counts.values()) or
+            self.legacy_unclassified_videos + sum(self.source_video_counts.values()) != self.processed_videos):
+            raise ValueError("Contatori E/P e storico checkpoint incoerenti")
         # Gli ID precedenti non servono al resume dei pesi: deduplica soltanto
         # dentro la sessione Flask corrente. Leggiamo anche snapshot v3 vecchi
         # che contenevano completed_episode_ids, senza richiederli.
