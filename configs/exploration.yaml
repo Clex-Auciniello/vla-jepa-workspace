@@ -63,6 +63,8 @@ robot_executor:
 trajectory_recorder:
   fps: 15
   front_topic: /zed_front/zed_node/rgb/color/rect/image
+  left_topic: /zed_left/zed_node/rgb/color/rect/image
+  right_topic: /zed_right/zed_node/rgb/color/rect/image
   gripper_topic: /zed_gripper/zed_node/rgb/color/rect/image
   sync_queue_size: 20
   sync_slop_s: 0.05

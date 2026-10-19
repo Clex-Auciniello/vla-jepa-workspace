@@ -74,9 +74,21 @@ class PlaysTrajectorySaver:
             if action.shape != (8,) or not np.isfinite(action).all():
                 raise ValueError(f"Frame {index}: commanded_action non 8D finita")
             state = frame.robot_state
+            if (
+                frame.left_png is None
+                or frame.right_png is None
+                or frame.left_stamp_ns is None
+                or frame.right_stamp_ns is None
+            ):
+                raise ValueError(
+                    f"Frame {index}: viste RGB laterali mancanti"
+                )
             obs = {
                 "front_camera_image": _decode_png_bgr(frame.front_png, "front"),
+                "left_camera_image": _decode_png_bgr(frame.left_png, "left"),
+                "right_camera_image": _decode_png_bgr(frame.right_png, "right"),
                 "gripper_camera_image": _decode_png_bgr(frame.gripper_png, "gripper"),
+
                 "joint_pos": np.asarray(state["joint_pos"], dtype=np.float64),
                 "joint_vel": np.asarray(state["joint_vel"], dtype=np.float64),
                 "gripper_qpos": np.asarray(state["gripper_qpos"], dtype=np.float64),
@@ -87,6 +99,8 @@ class PlaysTrajectorySaver:
             info = {
                 "index": index,
                 "front_stamp_ns": frame.front_stamp_ns,
+                "left_stamp_ns": frame.left_stamp_ns,
+                "right_stamp_ns": frame.right_stamp_ns,
                 "gripper_stamp_ns": frame.gripper_stamp_ns,
                 "event": frame.event,
                 "segment_id": frame.segment_id,

@@ -129,6 +129,7 @@ class FlaskTrainingTransport:
                 manifest_frames.append(entry)
             archive.writestr("manifest.json", json.dumps({
                 "schema_version": 1,
+                "source": "exploration",
                 "episode_id": task.episode_id,
                 "table_mode": task.table_mode,
                 "waypoint_ids": list(task.waypoint_ids),

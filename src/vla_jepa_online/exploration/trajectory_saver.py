@@ -108,6 +108,7 @@ class TrajectorySaver:
 
         meta = {
             'schema_version': 1,
+            'source': 'exploration',
             'episode_id': episode_id,
             'table_mode': table_mode,
             'waypoint_ids': list(waypoint_ids),
@@ -130,12 +131,33 @@ class TrajectorySaver:
                 raise ValueError(f'Frame {frame.index}: action 8D non valida')
             state = frame.robot_state
 
+            if (
+                frame.left_png is None
+                or frame.right_png is None
+                or frame.left_stamp_ns is None
+                or frame.right_stamp_ns is None
+            ):
+                raise ValueError(
+                    f"Frame {frame.index}: viste RGB laterali mancanti"
+                )
+
             # Il savers.py di dataset_collector_pkg comprime SOLO obs['image'].
             # Questi due array BGR non vengono ricompressi e sono direttamente
             # leggibili dai tool che analizzano i PKL di script_controller.
             obs = {
-                'front_camera_image': _decode_png_bgr(frame.front_png, 'front_camera_image'),
-                'gripper_camera_image': _decode_png_bgr(frame.gripper_png, 'gripper_camera_image'),
+                'front_camera_image': _decode_png_bgr(
+                    frame.front_png, 'front_camera_image'
+                ),
+                'left_camera_image': _decode_png_bgr(
+                    frame.left_png, 'left_camera_image'
+                ),
+                'right_camera_image': _decode_png_bgr(
+                    frame.right_png, 'right_camera_image'
+                ),
+                'gripper_camera_image': _decode_png_bgr(
+                    frame.gripper_png, 'gripper_camera_image'
+                ),
+
                 'joint_pos': np.asarray(state['joint_pos'], dtype=np.float64),
                 'joint_vel': np.asarray(state['joint_vel'], dtype=np.float64),
                 'gripper_qpos': np.asarray(state['gripper_qpos'], dtype=np.float64),
@@ -146,6 +168,8 @@ class TrajectorySaver:
             info = {
                 'index': frame.index,
                 'front_stamp_ns': frame.front_stamp_ns,
+                'left_stamp_ns': frame.left_stamp_ns,
+                'right_stamp_ns': frame.right_stamp_ns,
                 'gripper_stamp_ns': frame.gripper_stamp_ns,
                 'event': frame.event,
                 'segment_id': frame.segment_id,

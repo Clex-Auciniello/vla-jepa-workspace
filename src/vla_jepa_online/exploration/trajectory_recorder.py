@@ -18,6 +18,8 @@ from typing import Callable, Any
 class TrajectoryRecorderConfig:
     fps: float
     front_topic: str
+    left_topic: str
+    right_topic: str
     gripper_topic: str
     sync_queue_size: int
     sync_slop_s: float
@@ -38,8 +40,18 @@ class TrajectoryRecorderConfig:
             raise ValueError("png_compression deve essere tra 0 e 9")
         if cfg.joint_max_age_s <= 0 or not cfg.joint_states_topic:
             raise ValueError("joint_states_topic o joint_max_age_s non validi")
-        if not cfg.front_topic or not cfg.gripper_topic or cfg.front_topic == cfg.gripper_topic:
-            raise ValueError("I topic front e gripper devono essere distinti e non vuoti")
+        topics = (
+            cfg.front_topic,
+            cfg.left_topic,
+            cfg.right_topic,
+            cfg.gripper_topic,
+        )
+
+        if any(not topic or not topic.strip() for topic in topics):
+            raise ValueError("I quattro topic RGB devono essere non vuoti")
+
+        if len(set(topics)) != 4:
+            raise ValueError("I quattro topic RGB devono essere distinti")
         return cfg
 
 
@@ -57,10 +69,22 @@ class RecordedFrame:
     motion_label: str | None = None
     robot_state: dict[str, Any] | None = None
     commanded_action: tuple[float, ...] | None = None  # xyz, xyzw, gripper (0/1)
+    left_png: bytes | None = None
+    right_png: bytes | None = None
+    left_stamp_ns: int | None = None
+    right_stamp_ns: int | None = None
 
     @property
     def sync_error_ms(self) -> float:
-        return abs(self.front_stamp_ns - self.gripper_stamp_ns) / 1e6
+        stamps = [self.front_stamp_ns, self.gripper_stamp_ns]
+
+        if self.left_stamp_ns is not None:
+            stamps.append(self.left_stamp_ns)
+
+        if self.right_stamp_ns is not None:
+            stamps.append(self.right_stamp_ns)
+
+        return (max(stamps) - min(stamps)) / 1e6
 
 
 @dataclass(frozen=True)
@@ -127,16 +151,37 @@ class TrajectoryRecorder:
         self._decode_errors = 0
 
         self._front_sub = message_filters.Subscriber(
-            node, Image, config.front_topic, qos_profile=qos_profile_sensor_data,
+            node, Image, config.front_topic,
+            qos_profile=qos_profile_sensor_data,
         )
+
+        self._left_sub = message_filters.Subscriber(
+            node, Image, config.left_topic,
+            qos_profile=qos_profile_sensor_data,
+        )
+
+        self._right_sub = message_filters.Subscriber(
+            node, Image, config.right_topic,
+            qos_profile=qos_profile_sensor_data,
+        )
+
         self._gripper_sub = message_filters.Subscriber(
-            node, Image, config.gripper_topic, qos_profile=qos_profile_sensor_data,
+            node, Image, config.gripper_topic,
+            qos_profile=qos_profile_sensor_data,
         )
+
         self._sync = message_filters.ApproximateTimeSynchronizer(
-            [self._front_sub, self._gripper_sub],
-            queue_size=config.sync_queue_size, slop=config.sync_slop_s,
+            [
+                self._front_sub,
+                self._left_sub,
+                self._right_sub,
+                self._gripper_sub,
+            ],
+            queue_size=config.sync_queue_size,
+            slop=config.sync_slop_s,
         )
-        self._sync.registerCallback(self._on_pair)
+
+        self._sync.registerCallback(self._on_group)
 
     def start(self) -> None:
         """Start an episode with an empty frame list; no automatic captures."""
@@ -247,69 +292,107 @@ class TrajectoryRecorder:
         stamp = msg.header.stamp
         return int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
 
-    def _on_pair(self, front_msg, gripper_msg) -> None:
-        """ROS callback: satisfy exactly ONE pending post-trigger capture."""
-        front_stamp = self._stamp_ns(front_msg)
-        gripper_stamp = self._stamp_ns(gripper_msg)
-        if front_stamp <= 0 or gripper_stamp <= 0:
+    def _on_group(self, front_msg, left_msg, right_msg, gripper_msg) -> None:
+        """Registra un gruppo RGB sincronizzato dopo un trigger esplicito."""
+
+        messages = {
+            "front": front_msg,
+            "left": left_msg,
+            "right": right_msg,
+            "gripper": gripper_msg,
+        }
+
+        stamps = {
+            name: self._stamp_ns(msg)
+            for name, msg in messages.items()
+        }
+
+        if min(stamps.values()) <= 0:
             return
 
         with self._condition:
-            if not self._recording or self._pending is None or self._encoding_token is not None:
+            if (
+                not self._recording
+                or self._pending is None
+                or self._encoding_token is not None
+            ):
                 return
+
             token, event, after_ns, segment_id, motion_label = self._pending
-            if min(front_stamp, gripper_stamp) <= after_ns:
+
+            # Tutte le immagini devono essere successive al trigger.
+            if min(stamps.values()) <= after_ns:
                 return
+
             self._encoding_token = token
 
         try:
-            front_rgb = self.bridge.imgmsg_to_cv2(front_msg, desired_encoding="rgb8")
-            gripper_rgb = self.bridge.imgmsg_to_cv2(gripper_msg, desired_encoding="rgb8")
-            # PNG lossless: stesso contenuto RGB originale, senza perdita JPEG.
-            # OpenCV richiede i canali BGR per la codifica.
             compression = [
                 int(self._cv2.IMWRITE_PNG_COMPRESSION),
                 self.cfg.png_compression,
             ]
 
-            front_ok, front_buf = self._cv2.imencode(
-                ".png",
-                self._cv2.cvtColor(front_rgb, self._cv2.COLOR_RGB2BGR),
-                compression,
-            )
+            pngs = {}
 
-            gripper_ok, gripper_buf = self._cv2.imencode(
-                ".png",
-                self._cv2.cvtColor(gripper_rgb, self._cv2.COLOR_RGB2BGR),
-                compression,
-            )
+            for name, msg in messages.items():
+                rgb = self.bridge.imgmsg_to_cv2(
+                    msg, desired_encoding="rgb8"
+                )
 
-            if not front_ok or not gripper_ok:
-                raise ValueError("Codifica PNG non riuscita")
+                bgr = self._cv2.cvtColor(
+                    rgb, self._cv2.COLOR_RGB2BGR
+                )
+
+                ok, buffer = self._cv2.imencode(
+                    ".png", bgr, compression
+                )
+
+                if not ok:
+                    raise ValueError(f"Codifica PNG {name} fallita")
+
+                pngs[name] = buffer.tobytes()
+
         except Exception as exc:
             with self._condition:
                 self._decode_errors += 1
+
                 if self._encoding_token == token:
                     self._encoding_token = None
-            self.node.get_logger().warning(f"Recorder: coppia RGB scartata: {exc}")
+
+            self.node.get_logger().warning(
+                f"Recorder: gruppo RGB scartato: {exc}"
+            )
             return
 
         with self._condition:
             if self._encoding_token == token:
                 self._encoding_token = None
-            if not self._recording or self._pending is None or self._pending[0] != token:
-                return  # timed out/stopped while PNG was being encoded
-            self._frames.append(RecordedFrame(
-                index=len(self._frames) + 1,
-                front_png=front_buf.tobytes(),
-                gripper_png=gripper_buf.tobytes(),
-                front_stamp_ns=front_stamp,
-                gripper_stamp_ns=gripper_stamp,
-                event=event,
-                segment_id=segment_id,
-                motion_label=motion_label,
-            ))
-            self._last_stamp_ns = max(front_stamp, gripper_stamp)
+
+            if (
+                not self._recording
+                or self._pending is None
+                or self._pending[0] != token
+            ):
+                return
+
+            self._frames.append(
+                RecordedFrame(
+                    index=len(self._frames) + 1,
+                    front_png=pngs["front"],
+                    left_png=pngs["left"],
+                    right_png=pngs["right"],
+                    gripper_png=pngs["gripper"],
+                    front_stamp_ns=stamps["front"],
+                    left_stamp_ns=stamps["left"],
+                    right_stamp_ns=stamps["right"],
+                    gripper_stamp_ns=stamps["gripper"],
+                    event=event,
+                    segment_id=segment_id,
+                    motion_label=motion_label,
+                )
+            )
+
+            self._last_stamp_ns = max(stamps.values())
             self._completed_token = token
             self._pending = None
             self._condition.notify_all()

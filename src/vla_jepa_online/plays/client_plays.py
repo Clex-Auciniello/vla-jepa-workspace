@@ -263,7 +263,7 @@ class PlaysClient:
             uv1, uv2, pos1, pos2 = self.selector.click_two(labels[task], destinations[task])
             # Mantiene lo storico offset Y=-0.06 SOLO per i task con grasp.
             # Per la nuova spinta la geometria è distinta e non eredita l'offset.
-            offset = 0.0 if task in ("04", "08") else self.cfg.pick_y_offset_m
+            offset = 0.0 if task == "04" else self.cfg.pick_y_offset_m
             req = PlayRequest(task, color, target_color, uv1, uv2, pos1, pos2, offset,
                               rotation_deg=rotation_deg)
         except RuntimeError as exc:
@@ -285,6 +285,14 @@ class PlaysClient:
         print(f"\nPiano: {len(plan.commands)} comandi")
         for index, cmd in enumerate(plan.commands, 1):
             if cmd.kind == "pose":
+                if cmd.description == "Approach the cube from above":
+                    print(
+                        f"  {index:02d} REACH {cmd.description} "
+                        f"-> {cmd.target.xyz} (1 GoToPose, REC OFF)"
+                    )
+                    cursor = cmd.target
+                    continue
+
                 wps = build_linear_waypoints(
                     cursor.xyz, cursor.quaternion_xyzw,
                     cmd.target.xyz, cmd.target.quaternion_xyzw,
@@ -316,10 +324,10 @@ class PlaysClient:
         """
         self.recorder.start()
         try:
-            self.recorder.capture_step(
-                "start", motion_label="Start the selected play",
-                target_pose=plan.start_pose, gripper_closed=False,
-            )
+            # self.recorder.capture_step(
+            #     "start", motion_label="Start the selected play",
+            #     target_pose=plan.start_pose, gripper_closed=False,
+            # )
             self.robot.execute(plan, on_step=self.recorder.capture_step)
             time.sleep(self.cfg.final_settle_s)
             last_pose = next(

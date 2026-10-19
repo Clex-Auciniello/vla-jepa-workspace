@@ -25,7 +25,7 @@ TASKS: Mapping[str, str] = {
     "05": "Stack one cube on another [EXPERIMENTAL]",
     "06": "Unstack and relocate [EXPERIMENTAL]",
     "07": "Extract cube from bin [EXPERIMENTAL]",
-    "08": "Push cube into bin [EXPERIMENTAL]",
+    "08": "Pick and place cube into bin [EXPERIMENTAL]",
     "09": "Rotate gripper, pick and relocate [EXPERIMENTAL]",
 }
 EXPERIMENTAL = frozenset({"04", "05", "06", "07", "08", "09"})
@@ -135,7 +135,10 @@ def semantic_prompt(req: PlayRequest) -> str:
     if req.task_id == "07":
         return f"Take {c} out of the bin and place it on the table."
     if req.task_id == "08":
-        return f"Push {c} into the bin."
+        return (
+            f"Correct the position of the {c} "
+            f"by moving it inside the box {_direction(req)}. "
+        )
     if req.task_id == "09":
         verb = "Rotate the gripper to grasp" if req.rotation_deg != 0 else "Align the gripper to grasp"
         return f"{verb} {c}, then {_relocation_instruction(req)}."
@@ -157,7 +160,7 @@ def build_play_plan(start_pose: PoseTarget, req: PlayRequest,
     destination_xyz = obj.xyz if _in_place(req) else req.place_xyz
     dst = PoseTarget(destination_xyz, cfg.grasp_quaternion_xyzw)
     p = MotionPrimitives(start_pose, cfg)
-    if req.task_id in ("04", "08"):
+    if req.task_id == "04":
         p.push(obj, dst)
         return p.plan()
 

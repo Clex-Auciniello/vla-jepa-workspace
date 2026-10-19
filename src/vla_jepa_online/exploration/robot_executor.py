@@ -266,6 +266,13 @@ class RobotExecutor:
                 if command.kind == "pose":
                     assert command.target is not None
                     target = command.target
+
+                    # Reach: unico GoToPose, senza micro-step e senza registrazione.
+                    if command.description == "Approach the cube from above":
+                        self.backend.move_to_pose(target)
+                        current_pose = target
+                        continue
+
                     pure_rotation = (math.dist(current_pose.xyz, target.xyz) <= 1e-9)
                     for wp in build_linear_waypoints(
                         current_pose.xyz, current_pose.quaternion_xyzw,
