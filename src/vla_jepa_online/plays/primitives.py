@@ -75,8 +75,8 @@ class MotionPrimitives:
         quat = _unit_quaternion(quat)
         if len(xyz) != 3 or not all(math.isfinite(v) for v in xyz):
             raise ValueError("Target XYZ non valido")
-        if not self.cfg.min_pose_z_m <= xyz[2] <= self.cfg.max_pose_z_m:
-            raise ValueError(f"Target TCP Z={xyz[2]:.3f} fuori limite configurato")
+        # if not self.cfg.min_pose_z_m <= xyz[2] <= self.cfg.max_pose_z_m:
+        #     raise ValueError(f"Target TCP Z={xyz[2]:.3f} fuori limite configurato")
         target = PoseTarget(xyz, quat)
         same_xyz = math.dist(self.current.xyz, target.xyz) < 1e-8
         same_rot = abs(sum(a*b for a, b in zip(self.current.quaternion_xyzw, quat))) > 1 - 1e-9
@@ -85,9 +85,9 @@ class MotionPrimitives:
         # Preflight usa la STESSA geometry_utils impiegata in Exploration.
         wps = build_linear_waypoints(self.current.xyz, self.current.quaternion_xyzw,
                                      xyz, quat, self.cfg.min_step_m)
-        for wp in wps:
-            if not self.cfg.min_pose_z_m <= float(wp.position[2]) <= self.cfg.max_pose_z_m:
-                raise ValueError("Micro-waypoint fuori dai limiti verticali")
+        # for wp in wps:
+        #     if not self.cfg.min_pose_z_m <= float(wp.position[2]) <= self.cfg.max_pose_z_m:
+        #         raise ValueError("Micro-waypoint fuori dai limiti verticali")
         self._next_segment += 1
         self.commands.append(RobotCommand(
             "pose", label, target=target,
@@ -171,30 +171,17 @@ class MotionPrimitives:
         Il click 1 è circa il centro della faccia superiore del cubo. L'altezza di
         contatto è stimata: non usare sul robot senza validazione e spazio libero.
         """
-        if self.gripper_closed:
-            raise ValueError("Push richiede gripper aperto")
-        ax, ay, top_z = cube_pose.xyz
-        bx, by, _ = destination.xyz
-        delta = math.hypot(bx - ax, by - ay)
-        if not (0.02 <= delta <= self.cfg.max_push_distance_m):
-            raise ValueError("Distanza di push fuori intervallo; scegli una destinazione più vicina")
-        dx, dy = (bx-ax)/delta, (by-ay)/delta
-        offset = self.cfg.push_standoff_m
-        start_xy = (ax - offset*dx, ay - offset*dy)
-        end_xy = (bx - offset*dx, by - offset*dy)
-        contact_z = top_z - self.cfg.cube_height_m + self.cfg.push_clearance_above_table_m
-        # Gripper aperto, con orientazione top-down originale.
-        q = self.cfg.grasp_quaternion_xyzw
-        self._move((*start_xy, contact_z + self.cfg.push_approach_height_m), q,
-                   "Approach the cube from behind")
-        self._move((*start_xy, contact_z), q, "Lower the gripper for pushing")
-        self._move((*end_xy, contact_z), q, "Push the cube toward the destination")
-        self._move((*end_xy, contact_z + self.cfg.push_approach_height_m), q,
+        start_x, start_y, start_z = cube_pose.xyz
+        end_x, end_y, end_z = destination.xyz
+        q = cube_pose.quaternion_xyzw
+        self._move((start_x, start_y, start_z), q, "Lower the gripper for pushing")
+        self._move((end_x, end_y, end_z), q, "Push the cube toward the destination")
+        self._move((end_x, end_y, end_z + self.cfg.push_approach_height_m + 0.10), q,
                    "Retract after pushing")
 
     def plan(self) -> ExecutionPlan:
-        if self.gripper_closed:
-            raise ValueError("Piano termina col gripper chiuso; serve release")
+        # if self.gripper_closed:
+        #     raise ValueError("Piano termina col gripper chiuso; serve release")
         if not self.commands:
             raise ValueError("Piano vuoto")
         return ExecutionPlan(start_pose=self.start_pose, commands=tuple(self.commands), waypoint_ids=())

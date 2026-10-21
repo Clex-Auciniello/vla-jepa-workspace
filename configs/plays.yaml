@@ -4,7 +4,7 @@ plays:
   click_camera_name: zed_front
   camera_node_name: zed_node
   camera_calibration_path: /home/ros2_ws/src/zed_camera/zed_camera_calibration/estimated_camera_positions.yaml
-  table_frame: table_0
+  table_frame: table_1
   depth_window: 5
   preview_sync_slop_s: 0.08
   preview_timeout_s: 10.0
@@ -18,21 +18,22 @@ plays:
   save_path: /opt/vla_jepa_train/data/online_plays
   # Imporre durante i test il posizionamento libero degli oggetti e nessun intralcio.
   allow_experimental_execution: true
+  pick_x_offset_m: 0.03
 
 primitives:
   min_step_m: 0.02
-  reach_hover_height_m: 0.15
+  reach_hover_height_m: 0.08
   approach_z_offset_m: 0.0
-  release_height_offset_m: 0.10
+  release_height_offset_m: 0.02
   lift_height_m: 0.15
   rotation_deg: 30.0
   grasp_quaternion_xyzw: [0.9994452044624775, 0.03161651380119412, 0.0021438049655468088, 0.010251021036213035]
   # Parametri AGGIUNTIVI ancora da tarare sul robot.
   cube_height_m: 0.04
   stack_clearance_m: 0.01
-  push_standoff_m: 0.035
-  push_clearance_above_table_m: 0.02
-  push_approach_height_m: 0.12
+  push_standoff_m: 0.09
+  push_clearance_above_table_m: 0.03
+  push_approach_height_m: 0.02
   max_push_distance_m: 0.12
   # Limiti difensivi per i soli target TCP; NON sostituiscono collision checking.
   min_pose_z_m: 0.025

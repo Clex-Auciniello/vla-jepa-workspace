@@ -59,6 +59,7 @@ class PlaysTrajectorySaver:
             "pick_xyz": list(req.pick_xyz),
             "place_xyz": list(req.place_xyz),
             "pick_y_offset_m": req.pick_y_offset_m,
+            "pick_x_offset_m": req.pick_x_offset_m,
             "rotation_deg": req.rotation_deg,
             "operator_success": bool(operator_success),
             "operator_approved": bool(operator_approved),

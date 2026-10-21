@@ -65,6 +65,7 @@ class PlaysClientConfig:
     min_frames: int
     save_path: str
     allow_experimental_execution: bool
+    pick_x_offset_m: float
 
     @classmethod
     def from_yaml(cls, path: Path):
@@ -265,7 +266,7 @@ class PlaysClient:
             # Per la nuova spinta la geometria è distinta e non eredita l'offset.
             offset = 0.0 if task == "04" else self.cfg.pick_y_offset_m
             req = PlayRequest(task, color, target_color, uv1, uv2, pos1, pos2, offset,
-                              rotation_deg=rotation_deg)
+                              self.cfg.pick_x_offset_m, rotation_deg=rotation_deg)
         except RuntimeError as exc:
             print(f"Selezione annullata/non valida: {exc}")
             return False

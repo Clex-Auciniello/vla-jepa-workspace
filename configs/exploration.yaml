@@ -5,7 +5,7 @@ seed: 42
 # Numero di waypoint nominali DISTINTI in ogni traiettoria.
 # Modificabile tra episodi senza riavviare il client.
 random_walker:
-  num_waypoints: 5
+  num_waypoints: 4
 
 # Probabilita' per waypoint (0.20 = 20%).
 # Rotation: massimo due eventi per traiettoria; il secondo annulla il primo.

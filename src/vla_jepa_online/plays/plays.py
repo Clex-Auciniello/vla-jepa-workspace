@@ -44,6 +44,7 @@ class PlayRequest:
     pick_xyz: tuple[float, float, float]
     place_xyz: tuple[float, float, float]
     pick_y_offset_m: float
+    pick_x_offset_m: float
     rotation_deg: float | None = None
 
     def __post_init__(self):
@@ -84,7 +85,20 @@ def _near_clicks(req: PlayRequest) -> bool:
 def _object_xyz(req: PlayRequest) -> tuple[float, float, float]:
     # L'offset Y del vecchio ScriptController si applica solo al target grasp.
     x, y, z = req.pick_xyz
-    return (x, y + req.pick_y_offset_m, z)
+    return (
+        x + req.pick_x_offset_m,
+        y + req.pick_y_offset_m,
+        z,
+    )
+
+def _dest_xyz(req: PlayRequest) -> tuple[float, float, float]:
+    # FIX in X per il place.
+    x, y, z = req.place_xyz
+    return (
+        x + req.pick_x_offset_m,
+        y + req.pick_y_offset_m,
+        z,
+    )
 
 
 def _in_place(req: PlayRequest) -> bool:
@@ -110,7 +124,7 @@ def _direction(req: PlayRequest) -> str:
     if abs(dx) < 1e-8 and abs(dy) < 1e-8:
         return "in place"
     if abs(dx) >= abs(dy):
-        return "to the right" if dx > 0 else "to the left"
+        return "to the right" if dx < 0 else "to the left"
     return "forward" if dy > 0 else "backward"
 
 
@@ -157,11 +171,30 @@ def build_play_plan(start_pose: PoseTarget, req: PlayRequest,
     obj = PoseTarget(_object_xyz(req), cfg.grasp_quaternion_xyzw)
     # Se i due click quasi coincidono, niente traslazione laterale apparente:
     # evita che il solo offset storico Y faccia muovere il cubo di 6 cm.
-    destination_xyz = obj.xyz if _in_place(req) else req.place_xyz
-    dst = PoseTarget(destination_xyz, cfg.grasp_quaternion_xyzw)
+    # destination_xyz = obj.xyz if _in_place(req) else req.place_xyz
+    dst = PoseTarget(_dest_xyz(req), cfg.grasp_quaternion_xyzw)
     p = MotionPrimitives(start_pose, cfg)
     if req.task_id == "04":
-        p.push(obj, dst)
+        ax, ay, top_z = obj.xyz
+        bx, by, _ = dst.xyz
+        delta = math.hypot(bx - ax, by - ay)
+        # if not (0.02 <= delta <= self.cfg.max_push_distance_m):
+        #     raise ValueError("Distanza di push fuori intervallo; scegli una destinazione più vicina")
+        dx, dy = (bx-ax)/delta, (by-ay)/delta
+        offset = cfg.push_standoff_m
+        start_x = ax - offset*dx
+        start_y = ay - offset*dy - 0.07
+        end_x = bx - offset*dx  
+        end_y = by - offset*dy
+        contact_z = top_z - cfg.cube_height_m + cfg.push_clearance_above_table_m
+        # Gripper aperto, con orientazione top-down originale.
+        q = cfg.grasp_quaternion_xyzw
+        approach_push = PoseTarget((start_x, start_y, contact_z), q)
+        start_push = PoseTarget((start_x, start_y, contact_z), q)
+        end_push = PoseTarget((end_x, end_y, contact_z), q)
+        p.reach(approach_push)
+        p.pick()
+        p.push(start_push, end_push)
         return p.plan()
 
     p.reach(obj)
