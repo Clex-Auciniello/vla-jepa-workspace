@@ -1,7 +1,8 @@
 """Client ROS per pretraining online VLA-JEPA con PKL dataset_collector_pkg e upload ZIP.
 
-Il client muove il robot, registra in RAM e chiede approvazione manuale.
-Accettazione operatore: aggiorna IMMEDIATAMENTE ID e contatori del tracker.
+Il client muove il robot e registra in RAM. EMPTY: esecuzione/accettazione
+automatica dopo scelta esplicita del tavolo. OCCUPIED: conferme manuali.
+Accettazione operatore o automatica: aggiorna IMMEDIATAMENTE ID e contatori del tracker.
 POST /train_episode viene effettuato in un thread separato; la registrazione
 successiva NON attende il training. Lo stato training non modifica le visite.
 
@@ -15,6 +16,7 @@ import argparse
 import io
 import json
 import queue
+import signal
 import sys
 import threading
 import time
@@ -66,6 +68,11 @@ class ExplorationClientConfig:
 
 
 class TrainingSubmissionError(RuntimeError):
+    pass
+
+
+class _ConsoleSignal(Exception):
+    """Interrompe solo un input del terminale, mai un comando robotico in corso."""
     pass
 
 
@@ -273,6 +280,40 @@ class ExplorationClient:
         self._last_saved_id: str | None = None
         self._last_saved_path: Path | None = None
         self._last_post_result: str = "-"
+        self._auto_empty = False
+        self._pause_requested = False
+        self._exit_requested = False
+        self._sigint_count = 0
+        self._waiting_for_input = False
+
+    def _on_sigint(self, _signum, _frame) -> None:
+        """Il segnale non deve mai interrompere a meta' una chiamata ROS.
+
+        In movimento segna soltanto una richiesta: completa l'episodio, incluso
+        il salvataggio se valido, e applica lo stop alla successiva boundary.
+        Durante input() sveglia subito il menu tramite _ConsoleSignal.
+        """
+        self._sigint_count += 1
+        if self._sigint_count == 1:
+            self._pause_requested = True
+            self._auto_empty = False
+            self.report("\n[CTRL+C] Pausa richiesta: torno al menu al prossimo punto sicuro. ")
+        else:
+            self._exit_requested = True
+            self._auto_empty = False
+            self.report("\n[CTRL+C] Uscita richiesta: attendo la fine del comando/episodio in corso.")
+        if self._waiting_for_input:
+            raise _ConsoleSignal()
+
+    def _input(self, prompt: str) -> str:
+        self._waiting_for_input = True
+        try:
+            return self.ask(prompt)
+        finally:
+            self._waiting_for_input = False
+
+    def _interrupted(self) -> bool:
+        return self._pause_requested or self._exit_requested
 
     def _drain_training_events(self) -> None:
         for event in self.sender.drain_events():
@@ -282,6 +323,11 @@ class ExplorationClient:
                     else "POST accettato (HTTP); training asincrono"
                 )
             if event.status == "upload_error":
+                # Evita di raccogliere indefinitamente video che non arrivano al server.
+                if self._auto_empty:
+                    self._auto_empty = False
+                    self._pause_requested = True
+                    self.report("[AUTO EMPTY] Invio fallito: pausa al termine dell'episodio.")
                 self.report(
                     f"[CLIENT POST] {event.episode_id}: ERRORE {event.message}. "
                     "PKL conservato; nessun retry automatico."
@@ -320,9 +366,18 @@ class ExplorationClient:
 
     def _mode(self, previous: str | None) -> str | None:
         while True:
+            if self._exit_requested:
+                return None
             self._show_monitor()
             extra = f" [INVIO={previous}]" if previous else ""
-            answer = self.ask(f"Tavolo [e=EMPTY / o=OCCUPIED / t=stato / q=esci]{extra}: ").strip().lower()
+            try:
+                answer = self._input(
+                    f"Tavolo [e=EMPTY automatico / o=OCCUPIED manuale / t=stato / q=esci]{extra}: "
+                ).strip().lower()
+            except _ConsoleSignal:
+                if self._exit_requested:
+                    return None
+                continue  # primo Ctrl+C: siamo gia' nel menu
             if answer == "t":
                 continue
             if answer == "q":
@@ -335,10 +390,13 @@ class ExplorationClient:
                 return previous
             self.report("Seleziona e oppure o.")
 
-    def _enter(self, prompt: str) -> bool:
+    def _enter(self, prompt: str) -> bool | None:
         while True:
             self._show_monitor()
-            answer = self.ask(prompt + " [INVIO / t=stato / q=esci]: ").strip().lower()
+            try:
+                answer = self._input(prompt + " [INVIO / t=stato / q=esci]: ").strip().lower()
+            except _ConsoleSignal:
+                return False if self._exit_requested else None  # None: torna al menu
             if answer == "t":
                 continue
             if answer == "":
@@ -349,34 +407,64 @@ class ExplorationClient:
     def _decision(self) -> str:
         while True:
             self._show_monitor()
-            answer = self.ask("Registrazione: [a=accetta / s=scarta / t=stato / q=esci]: ").strip().lower()
+            try:
+                answer = self._input(
+                    "Registrazione: [a=accetta / s=scarta / t=stato / q=esci]: "
+                ).strip().lower()
+            except _ConsoleSignal:
+                return "q" if self._exit_requested else "s"
             if answer == "t":
                 continue
             if answer in ("a", "s", "q"):
                 return answer
 
     def _recover(self, error: Exception) -> bool:
+        self._auto_empty = False  # Mai riprendere automaticamente dopo un guasto.
         self.report(f"ERRORE ROBOT: {error}. Episodio scartato.")
         self.report("Nessun recupero automatico. Ripristina il robot dal tablet.")
-        return self._enter("Dopo il ripristino, riparti con un NUOVO tentativo")
+        result = self._enter("Dopo il ripristino, riparti con un NUOVO tentativo")
+        return result is not False  # Ctrl+C -> menu; q -> uscita.
 
     def run(self) -> None:
         mode: str | None = None
         home_ready = False
+        previous_sigint = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, self._on_sigint)
         self.sender.start()
         self.report(f"Client VLA-JEPA: PKL dataset_collector_pkg persistenti in {self.saver.root}; "
                     "upload/training asincroni via Flask.")
         try:
             while True:
                 self._drain_training_events()
-                mode = self._mode(mode)
-                if mode is None:
+                if self._exit_requested:
                     break
+                if self._auto_empty and not self._interrupted():
+                    mode = "empty"
+                    self._show_monitor()
+                    if self._interrupted():  # possibile errore POST letto nel monitor
+                        continue
+                else:
+                    mode = self._mode(mode)
+                    if mode is None:
+                        break
+                    # Una scelta esplicita del tavolo riavvia il ciclo di Ctrl+C.
+                    self._auto_empty = (mode == "empty")
+                    self._pause_requested = False
+                    self._sigint_count = 0
+                    self.report("[AUTO EMPTY] Attivo: episodi validi accettati senza conferme."
+                                if self._auto_empty else "[OCCUPIED] Conferme manuali attive.")
+                episode_auto = self._auto_empty
                 episode_id = self.tracker.next_episode_id
                 self.report(f"\n=== {episode_id} | {mode.upper()} ===")
                 if not home_ready:
-                    if not self._enter("GoHome -> gripper OPEN"):
-                        break
+                    if not episode_auto:
+                        ready = self._enter("GoHome -> gripper OPEN")
+                        if ready is None:
+                            continue
+                        if not ready:
+                            break
+                    if self._interrupted():
+                        continue
                     try:
                         self.robot.prepare_home()
                         home_ready = True
@@ -385,6 +473,11 @@ class ExplorationClient:
                         if not self._recover(exc):
                             break
                         continue
+
+                if self._interrupted():
+                    if self._exit_requested:
+                        break
+                    continue
 
                 start_id = self.walker.sample_start(
                     self.grid, self.tracker.start_visits, rng=self.tracker.rng,
@@ -400,9 +493,18 @@ class ExplorationClient:
                 )
                 self.report(f"START nominale: {start_id}")
                 self.report("Waypoint nominali: " + ", ".join(map(str, walk.waypoint_ids)))
-                if not self._enter(f"Prepara tavolo {mode.upper()}; vai a START e avvia registrazione"):
+                if not episode_auto:
+                    ready = self._enter(f"Prepara tavolo {mode.upper()}; vai a START e avvia registrazione")
+                    if ready is not True:
+                        self.tracker.discard_episode(episode_id)
+                        if ready is None:
+                            continue
+                        break
+                if self._interrupted():
                     self.tracker.discard_episode(episode_id)
-                    break
+                    if self._exit_requested:
+                        break
+                    continue
 
                 try:
                     start_pose = self.robot.move_to_start(start_waypoint)  # REC OFF
@@ -412,8 +514,23 @@ class ExplorationClient:
                     if not self._recover(exc):
                         break
                     continue
+                # Un Ctrl+C durante move_to_start non avvia ulteriori movimenti.
+                if self._interrupted():
+                    home_ready = False
+                    self.tracker.discard_episode(episode_id)
+                    self.report("[CTRL+C] START raggiunto, registrazione non avviata. "
+                                "Controlla la posa robot prima della ripresa.")
+                    if self._exit_requested:
+                        break
+                    continue
                 plan = self.robot.build_commands(motion, start_pose, grid=self.grid,
                                                  start_waypoint=start_waypoint)
+                if self._interrupted():
+                    home_ready = False
+                    self.tracker.discard_episode(episode_id)
+                    if self._exit_requested:
+                        break
+                    continue
 
                 self.recorder.start()  # REC ON only after START was reached
                 robot_error: Exception | None = None
@@ -451,9 +568,22 @@ class ExplorationClient:
                 if len(episode.frames) < self.min_frames:
                     self.report(f"Scartato: {len(episode.frames)} coppie, minimo {self.min_frames}.")
                     self.tracker.discard_episode(episode_id)
+                    # In AUTO un video troppo breve non e' un episodio valido:
+                    # fermati, non continuare a produrre scarti in silenzio.
+                    if episode_auto:
+                        self._auto_empty = False
+                        self._pause_requested = True
+                        self.report("[AUTO EMPTY] Troppi pochi frame; tornare al menu.")
                     continue
 
-                choice = self._decision()
+                if episode_auto:
+                    choice = "a"
+                    self.report(f"[AUTO EMPTY] {episode_id}: esecuzione valida; "
+                                "accettazione automatica (nessun controllo fisico dei risultati).")
+                elif self._interrupted():
+                    choice = "q" if self._exit_requested else "s"
+                else:
+                    choice = self._decision()
                 if choice != "a":
                     self.tracker.discard_episode(episode_id)
                     if choice == "q":
@@ -500,8 +630,11 @@ class ExplorationClient:
         finally:
             self.report("Uscita: completo gli eventuali POST ancora in RAM; "
                         "NON attendo il training Flask.")
-            self.sender.shutdown()
-            self._drain_training_events()
+            try:
+                self.sender.shutdown()
+                self._drain_training_events()
+            finally:
+                signal.signal(signal.SIGINT, previous_sigint)
 
 
 def _arguments(argv: list[str] | None = None):
