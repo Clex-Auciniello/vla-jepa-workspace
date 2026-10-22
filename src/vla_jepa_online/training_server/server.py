@@ -19,8 +19,12 @@ import argparse
 import io
 import json
 import logging
+import os
 import queue
+import re
+import tempfile
 import threading
+import zipfile
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -118,6 +122,10 @@ class ServerConfig:
     # Episodi in attesa, escluso quello attualmente in training.
     max_queued_episodes: int = 3
 
+    # E1 is the original online Exploration server. E2 uses offline PKLs.
+    mode: str = "exploration"
+    offline_exploration_dir: str | None = None
+
 
 @dataclass(frozen=True)
 class QueuedEpisode:
@@ -151,6 +159,10 @@ class TrainingService:
                 "Il limite della coda deve essere almeno 1"
             )
 
+        if cfg.mode not in ("exploration", "mixed"):
+            raise ValueError(f"Unknown experiment mode: {cfg.mode}")
+        if cfg.mode == "mixed" and not cfg.offline_exploration_dir:
+            raise ValueError("E2 requires offline_exploration_dir")
         self.cfg = cfg
         self.trainer_factory = trainer_factory
 
@@ -181,6 +193,13 @@ class TrainingService:
 
         # Numero cumulativo di video consolidati su disco.
         self._checkpointed_videos = 0
+
+        # Only E2 uses these fields. They are initialized before starting the worker.
+        self._exploration_catalog = None
+        self._exploration_offset = 0
+        self._exploration_initial_offset = 0
+        self._mixed_last_checkpointed_play_number = 0
+        self._mixed_last_accepted_play_number = 0
 
         # Un solo worker GPU per tutto il server.
         self._worker = threading.Thread(
@@ -324,6 +343,89 @@ class TrainingService:
             # I byte del video NON sono inclusi nella risposta.
             return dict(info) if info is not None else None
 
+    def _initialize_mixed(self, trainer: Any, resume: Path | None) -> None:
+        """Check E2 identity, recover the offline cursor and last checkpointed Play."""
+        catalog = self.builder.catalog_exploration_pkls(self.cfg.offline_exploration_dir)
+        counts = trainer.source_video_counts
+        windows = trainer.source_window_counts
+        p_count = int(counts.get("P", 0))
+        e_count = int(counts.get("E", 0))
+        p_windows = int(windows.get("P", 0))
+        e_windows = int(windows.get("E", 0))
+        if (p_count != e_count or p_windows != e_windows
+                or trainer.processed_videos != 2 * p_count
+                or int(counts.get("other", 0)) != 0
+                or int(getattr(trainer, "legacy_unclassified_videos", 0)) != 0
+                or e_windows > catalog.total_windows):
+            raise RuntimeError("E2 requires a balanced E2 checkpoint or fresh DROID weights")
+
+        last_number = 0
+        if resume is not None:
+            marker_path = resume / "mixed_replay_state.json"
+            if not marker_path.is_file():
+                raise RuntimeError(
+                    f"Missing E2 resume marker {marker_path}. "
+                    "Refusing to recover an ambiguous/incomplete checkpoint."
+                )
+            marker = json.loads(marker_path.read_text(encoding="utf-8"))
+            checkpoint_meta = json.loads(
+                (resume / "checkpoint_meta.json").read_text(encoding="utf-8")
+            )
+            last_id = marker.get("last_play_id")
+            if (marker.get("version") != 1 or marker.get("mode") != "mixed"
+                    or marker.get("dataset_fingerprint") != catalog.fingerprint
+                    or marker.get("checkpoint_sequence") != checkpoint_meta.get("checkpoint_sequence")
+                    or marker.get("exploration_offset") != e_windows
+                    or marker.get("play_windows") != p_windows
+                    or marker.get("play_count") != p_count
+                    or not isinstance(last_id, str)
+                    or not re.fullmatch(r"P\d{5,}", last_id)):
+                raise RuntimeError("E2 resume marker is inconsistent with checkpoint or offline dataset")
+            last_number = int(last_id[1:])
+        self._exploration_catalog = catalog
+        self._exploration_offset = e_windows
+        self._exploration_initial_offset = e_windows
+        self._mixed_last_checkpointed_play_number = last_number
+        self._mixed_last_accepted_play_number = last_number
+        LOGGER.info(
+            "E2 offline dataset: %s, %d PKL, %d windows, cursor=%d, last checkpointed Play=%d",
+            self.cfg.offline_exploration_dir, len(catalog.entries),
+            catalog.total_windows, e_windows, last_number,
+        )
+
+    def _write_mixed_checkpoint_marker(self, checkpoint: str, last_play_id: str) -> None:
+        """Commit resume metadata alongside trainer's completed A/B checkpoint.
+
+        A crash between the trainer's atomic checkpoint and this marker fails
+        closed on restart instead of silently replaying/omitting windows.
+        """
+        path = Path(checkpoint) / "mixed_replay_state.json"
+        meta = json.loads(
+            (Path(checkpoint) / "checkpoint_meta.json").read_text(encoding="utf-8")
+        )
+        record = {
+            "version": 1,
+            "mode": "mixed",
+            "checkpoint_sequence": meta["checkpoint_sequence"],
+            "dataset_fingerprint": self._exploration_catalog.fingerprint,
+            "exploration_offset": self._exploration_offset,
+            "play_windows": int(self._trainer.source_window_counts["P"]),
+            "play_count": int(self._trainer.source_video_counts["P"]),
+            "last_play_id": last_play_id,
+        }
+        fd, temporary = tempfile.mkstemp(prefix=".mixed_marker_", dir=path.parent)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as output:
+                json.dump(record, output, indent=2)
+                output.write("\n")
+                output.flush()
+                os.fsync(output.fileno())
+            os.replace(temporary, path)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+        self._mixed_last_checkpointed_play_number = int(last_play_id[1:])
+
     def submit(
         self,
         request: Any,
@@ -419,6 +521,17 @@ class TrainingService:
                 )
             }, 400
 
+        if self.cfg.mode == "mixed":
+            # ZIPs remain the online Plays wire format; E comes from local PKLs.
+            try:
+                with zipfile.ZipFile(io.BytesIO(payload), "r") as archive:
+                    manifest = json.loads(archive.read("manifest.json"))
+                if (manifest.get("source") != "plays"
+                        or re.fullmatch(r"P\d{5,}", episode_id) is None):
+                    raise ValueError("E2 accepts only online Plays P*.zip")
+            except Exception as exc:
+                return {"error": f"E2 source not valid: {exc}"}, 400
+
         # Seconda verifica sotto lock:
         # un'altra richiesta potrebbe aver occupato la coda.
         with self._cv:
@@ -444,6 +557,27 @@ class TrainingService:
                     "queued": len(self._pending),
                 }, 503
 
+            if self.cfg.mode == "mixed":
+                play_number = int(episode_id[1:])
+                if play_number <= self._mixed_last_checkpointed_play_number:
+                    return {"error": "Play already consolidated in the E2 checkpoint"}, 409
+                if play_number <= self._mixed_last_accepted_play_number:
+                    return {"error": "Play ID must increase monotonically in E2"}, 409
+                # Count every accepted Play since the checkpoint, including
+                # already trained ones; this avoids a race with replay commit.
+                reserved = sum(int(record["play_windows"])
+                               for record in self._episodes.values())
+                required = self._exploration_initial_offset + reserved + int(summary["windows"])
+                if required > self._exploration_catalog.total_windows:
+                    return {
+                        "error": "Insufficient unused offline Exploration windows",
+                        "exploration_remaining_unreserved": (
+                            self._exploration_catalog.total_windows
+                            - self._exploration_initial_offset - reserved
+                        ),
+                    }, 409
+                self._mixed_last_accepted_play_number = play_number
+
             # Registrazione in memoria del video accettato.
             self._episodes[episode_id] = {
                 "episode_id": episode_id,
@@ -455,8 +589,14 @@ class TrainingService:
                 "finished_at": None,
 
                 "frames": int(summary["frames"]),
-                "windows_total": int(summary["windows"]),
+                "windows_total": (2 * int(summary["windows"])
+                                  if self.cfg.mode == "mixed" else int(summary["windows"])),
+                "play_windows": int(summary["windows"]) if self.cfg.mode == "mixed" else None,
                 "windows_done": 0,
+                "latest_prompt": None,
+                "latest_source": None,
+                "latest_original_episode_id": None,
+                "latest_window_index": None,
 
                 "latest_wm_loss": None,
                 "error": None,
@@ -492,6 +632,11 @@ class TrainingService:
         episode_id: str,
         done: int,
         wm_loss: float,
+        *,
+        source: str | None = None,
+        original_episode_id: str | None = None,
+        window_index: int | None = None,
+        prompt: str | None = None,
     ) -> None:
         """Aggiorna il progresso visibile durante il training."""
 
@@ -499,6 +644,10 @@ class TrainingService:
             with self._lock:
                 self._episodes[episode_id]["windows_done"] = done
                 self._episodes[episode_id]["latest_wm_loss"] = wm_loss
+                self._episodes[episode_id]["latest_source"] = source
+                self._episodes[episode_id]["latest_original_episode_id"] = original_episode_id
+                self._episodes[episode_id]["latest_window_index"] = window_index
+                self._episodes[episode_id]["latest_prompt"] = prompt
                 self._notify_monitor_unlocked(f"FINESTRA {episode_id} {done}/{self._episodes[episode_id]['windows_total']}")
 
         except Exception:
@@ -530,6 +679,8 @@ class TrainingService:
 
             # Il modello viene creato una sola volta.
             trainer = self.trainer_factory(resume)
+            if self.cfg.mode == "mixed":
+                self._initialize_mixed(trainer, resume)
 
             with self._cv:
                 self._trainer = trainer
@@ -605,21 +756,109 @@ class TrainingService:
             )
 
             try:
-                # Estrazione lazy delle finestre.
-                # Le immagini vengono preparate progressivamente.
+                # Same ZIP preprocessing in E1 and for the Plays half of E2.
+                # The last yielded window metadata is available synchronously
+                # to the callback after its backward/optimizer step.
+                last_window: dict[str, Any] = {}
                 windows = self.builder.iter_episode_windows(payload)
 
-                result = self._trainer.train_episode(
-                    episode_id,
-                    (window.batch for window in windows),
-                    on_window_complete=lambda n, loss: (
-                        self._window_progress(
-                            episode_id,
-                            n,
-                            loss,
+                def play_batches():
+                    for window in windows:
+                        last_window.update(
+                            source="P" if episode_id.startswith("P") else "E",
+                            original_episode_id=window.episode_id,
+                            window_index=window.window_index,
+                            prompt=window.batch["task"][0],
                         )
-                    ),
-                )
+                        yield window.batch
+
+                if self.cfg.mode == "exploration":
+                    # E1: original single train_episode call, with prompt logging.
+                    result = self._trainer.train_episode(
+                        episode_id,
+                        play_batches(),
+                        on_window_complete=lambda n, loss: self._window_progress(
+                            episode_id, n, loss, **last_window
+                        ),
+                    )
+                else:
+                    n_play = int(info["play_windows"])
+                    spans, next_offset = self.builder.plan_exploration_replay(
+                        self._exploration_catalog, self._exploration_offset, n_play
+                    )
+                    # Catalog startup already validated every PKL and window.
+                    # The planner checked file size/mtime before training this Play.
+
+                    play_result = self._trainer.train_episode(
+                        episode_id,
+                        play_batches(),
+                        on_window_complete=lambda n, loss: self._window_progress(
+                            episode_id, n, loss, **last_window
+                        ),
+                    )
+                    if int(play_result["windows"]) != n_play:
+                        raise RuntimeError("Number of trained Play windows disagrees with ZIP")
+
+                    # Source counters in the unchanged trainer recognize E* IDs.
+                    replay_episode_id = f"E_REPLAY_{episode_id}"
+                    replay_window: dict[str, Any] = {}
+
+                    def exploration_batches():
+                        for span in spans:
+                            for window in self.builder.iter_exploration_pkl_windows(
+                                span.entry.path, start_window=span.first_window,
+                                stop_window=span.stop_window
+                            ):
+                                replay_window.update(
+                                    source="E", original_episode_id=window.episode_id,
+                                    window_index=window.window_index,
+                                    prompt=window.batch["task"][0],
+                                )
+                                yield window.batch
+
+                    exploration_result = self._trainer.train_episode(
+                        replay_episode_id,
+                        exploration_batches(),
+                        on_window_complete=lambda n, loss: self._window_progress(
+                            episode_id, n_play + n, loss, **replay_window
+                        ),
+                    )
+                    if int(exploration_result["windows"]) != n_play:
+                        raise RuntimeError("Replay window count mismatch")
+
+                    self._exploration_offset = next_offset
+                    if exploration_result.get("checkpoint_path"):
+                        # The original trainer saves after ten E/P units:
+                        # five complete Play+Exploration pairs.
+                        self._write_mixed_checkpoint_marker(
+                            exploration_result["checkpoint_path"], episode_id
+                        )
+                    if (self._trainer.source_window_counts["E"]
+                            != self._trainer.source_window_counts["P"]):
+                        raise RuntimeError("E2 source window counters are unbalanced")
+                    with self._lock:
+                        self._stats = _trainer_monitor_stats(self._trainer)
+
+                    result = {
+                        **exploration_result,
+                        "episode_id": episode_id,
+                        "windows": 2 * n_play,
+                        "play_windows": n_play,
+                        "exploration_windows": n_play,
+                        "mean_wm_loss": (play_result["mean_wm_loss"]
+                                         + exploration_result["mean_wm_loss"]) / 2,
+                        "play_mean_wm_loss": play_result["mean_wm_loss"],
+                        "exploration_mean_wm_loss": exploration_result["mean_wm_loss"],
+                        "optimizer_steps_for_video": (
+                            play_result["optimizer_steps_for_video"]
+                            + exploration_result["optimizer_steps_for_video"]
+                        ),
+                    }
+                    LOGGER.info(
+                        "E2 PAIR %s: P=%d E=%d offline_cursor=%d/%d",
+                        episode_id, n_play, n_play, self._exploration_offset,
+                        self._exploration_catalog.total_windows,
+                    )
 
                 with self._cv:
                     info = self._episodes[episode_id]
@@ -721,6 +960,17 @@ def format_server_monitor(service: TrainingService, event: str = "STATUS") -> st
         counts += f" legacy={stats['videos_legacy']}v"
     if stats.get("videos_other", 0):
         counts += f" other={stats['videos_other']}v"
+    prompt_text = ""
+    if event.startswith("FINESTRA") and ongoing is not None:
+        # Only describe the just-completed window, not a stale earlier event.
+        label = ongoing.get("latest_prompt")
+        if label is not None:
+            prompt_text = (
+                f" | source={ongoing.get('latest_source') or '?'}"
+                f" original={ongoing.get('latest_original_episode_id') or '?'}"
+                f" window_index={ongoing.get('latest_window_index')}"
+                f" | prompt={label}"
+            )
     return (
         f"[{event}] server={status['server']} | FIFO={status['queued']}/{status['queue_capacity']}"
         f" [{', '.join(ids) or '-'}] | GPU={current or '-'}{progress}"
@@ -730,6 +980,7 @@ def format_server_monitor(service: TrainingService, event: str = "STATUS") -> st
         f" checkpointed={status['checkpointed_videos']}"
         f" | safe_to_stop={'TRUE' if status['safe_to_stop'] else 'FALSE'}"
         + (f" | ERRORE={status['error']}" if status.get("error") else "")
+        + prompt_text
     )
 
 
@@ -888,6 +1139,15 @@ def main() -> None:
         help="Seed PyTorch, NumPy e Python per il training.",
     )
 
+    parser.add_argument(
+        "--mode", choices=("exploration", "mixed"), default="exploration",
+        help="exploration=original E1; mixed=online Plays + offline PKL Exploration",
+    )
+    parser.add_argument(
+        "--offline-exploration-dir", default=None,
+        help="Trusted E*.pkl directory, only required for mode=mixed",
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -900,6 +1160,8 @@ def main() -> None:
         port=args.port,
         checkpoint_root=args.checkpoint_root,
         max_queued_episodes=args.max_queue,
+        mode=args.mode,
+        offline_exploration_dir=args.offline_exploration_dir,
     )
 
     def factory(resume_path: Path | None):

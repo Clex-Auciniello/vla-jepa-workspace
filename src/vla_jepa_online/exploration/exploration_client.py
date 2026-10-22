@@ -49,7 +49,7 @@ class ExplorationClientConfig:
     request_timeout_s: float
     max_queued_uploads: int
     min_frames: int
-    trajectory_save_path: str = "/opt/vla_jepa_train/data/online_trajectories"
+    trajectory_save_path: str = "/opt/vla_jepa_train/data/exploration_trajectories"
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "ExplorationClientConfig":

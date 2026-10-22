@@ -143,23 +143,42 @@ export PYTHONPATH="$LEROBOT_TRAIN/src:/opt/vla_jepa_train/src:${PYTHONPATH:-}"
 export HF_HOME="/opt/vla_jepa/huggingface"
 export HF_HUB_CACHE="$HF_HOME/hub"
 
+export DATASET_SCRIPTS="/home/ros2_ws/src/dataset_collector/dataset_collector_pkg/scripts"
+
+export PYTHONPATH="$DATASET_SCRIPTS:$LEROBOT_TRAIN/src:/opt/vla_jepa_train/src:${PYTHONPATH:-}"
+
 mkdir -p logs checkpoints/exploration
 
 set -o pipefail
 
+## RUN EXPERIMENT 1 -- exploration only
+
 "$VENV/bin/python" -u -m vla_jepa_online.training_server.server \
   --host 127.0.0.1 \
   --port 8765 \
+  --mode exploration \
   --checkpoint-root /opt/vla_jepa_train/checkpoints/exploration \
   --pretrained-path /opt/vla_jepa_train/checkpoints/base \
   --max-queue 3 \
   --qwen-lr 1e-5 \
   --predictor-lr 1e-5 \
   --seed 1000 \
-  2>&1 | tee logs/online_server.log
+  2>&1 | tee -a logs/online_server.log
 
+## RUN EXPERIMENT 2 -- mixed play online exploration
 
-
+"$VENV/bin/python" -u -m vla_jepa_online.training_server.server \
+  --host 127.0.0.1 \
+  --port 8765 \
+  --mode mixed \
+  --offline-exploration-dir /opt/vla_jepa_train/data/exploration_trajectories \
+  --checkpoint-root /opt/vla_jepa_train/checkpoints/exploration_plays \
+  --pretrained-path /opt/vla_jepa_train/checkpoints/base \
+  --max-queue 3 \
+  --qwen-lr 1e-5 \
+  --predictor-lr 1e-5 \
+  --seed 1000 \
+  2>&1 | tee -a logs/mixed_server.log
 
 
 # Sesto terminale

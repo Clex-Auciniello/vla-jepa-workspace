@@ -23,6 +23,10 @@ from __future__ import annotations
 
 import io
 import json
+import hashlib
+import importlib
+import pickle
+import re
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -363,3 +367,211 @@ class OnlineBatchBuilder:
             num_frames, window_size=window_size,
             stride=stride, repeat_last=repeat_last,
         ))
+
+    def inspect_exploration_pkl(self: OnlineBatchBuilder, path: str | Path) -> dict[str, Any]:
+        """E2 preflight of a complete PKL, including every window's actual prompt."""
+        path = Path(path)
+        traj = _open_exploration_pkl(path)
+        frames_count = len(traj)
+        if not self.cfg.window_size <= frames_count <= self.cfg.max_frames:
+            raise ValueError(f"Invalid Exploration frame count {frames_count}: {path}")
+        labels = []
+        sizes = {}
+        for idx in range(frames_count):
+            step = traj.get(idx, decompress=False)
+            if int(step["info"]["index"]) != idx + 1:
+                raise ValueError(f"Nonconsecutive PKL frame {idx+1}: {path}")
+            label = step["info"].get("motion_label")
+            if label is not None and (not isinstance(label, str) or not label.strip()):
+                raise ValueError(f"Invalid motion_label at frame {idx+1}: {path}")
+            labels.append({"motion_label": label})
+            for camera, crop in (("front_camera_image", self.cfg.front_crop),
+                                 ("gripper_camera_image", self.cfg.gripper_crop)):
+                arr = np.asarray(step["obs"][camera])
+                if arr.ndim != 3 or arr.shape[2] != 3 or arr.dtype != np.uint8:
+                    raise ValueError(f"Invalid {camera} at frame {idx+1}: {path}")
+                height, width = arr.shape[:2]
+                if crop is not None and (crop.left < 0 or crop.top < 0 or
+                        crop.right < 0 or crop.bottom < 0 or
+                        width <= crop.left + crop.right or height <= crop.top + crop.bottom):
+                    raise ValueError(f"Invalid crop for {camera}: {path}")
+                if camera in sizes and sizes[camera] != arr.shape:
+                    raise ValueError(f"Image dimensions changed in {camera}: {path}")
+                sizes[camera] = arr.shape
+        starts = _window_starts(frames_count, window_size=self.cfg.window_size,
+                                stride=self.cfg.stride, repeat_last=False)
+        for start in starts:
+            _prompt_for_window(labels[start:start + self.cfg.window_size])
+        return {"episode_id": path.stem, "frames": frames_count, "windows": len(starts)}
+
+
+    def iter_exploration_pkl_windows(
+            self: OnlineBatchBuilder, path: str | Path, *,
+            start_window: int = 0, stop_window: int | None = None) -> Iterator[EpisodeWindow]:
+        """Decode only selected 8-frame windows; no window crosses a PKL boundary."""
+        path = Path(path)
+        # The entire PKL was validated when the immutable E2 catalog was built.
+        # Reopen it only once per replay span, without rescanning all its frames.
+        traj = _open_exploration_pkl(path)
+        starts = _window_starts(len(traj), window_size=self.cfg.window_size,
+                                stride=self.cfg.stride, repeat_last=False)
+        count = len(starts)
+        if stop_window is None:
+            stop_window = count
+        if not (0 <= start_window < stop_window <= count):
+            raise ValueError(f"Invalid PKL replay slice {start_window}:{stop_window} in {path}")
+        for index in range(start_window, stop_window):
+            start = starts[index]
+            selected = [traj.get(j, decompress=False)
+                        for j in range(start, start + self.cfg.window_size)]
+            prompt = _prompt_for_window([{"motion_label": step["info"].get("motion_label")}
+                                         for step in selected])
+            front = torch.stack([
+                _pkl_bgr_to_tensor(step["obs"]["front_camera_image"],
+                                   self.cfg.front_crop, self.cfg.image_size)
+                for step in selected
+            ])
+            gripper = torch.stack([
+                _pkl_bgr_to_tensor(step["obs"]["gripper_camera_image"],
+                                   self.cfg.gripper_crop, self.cfg.image_size)
+                for step in selected
+            ])
+            yield EpisodeWindow(path.stem, index, start, {
+                self.cfg.front_feature: front.unsqueeze(0),
+                self.cfg.gripper_feature: gripper.unsqueeze(0),
+                "task": [prompt],
+            })
+
+
+    def catalog_exploration_pkls(
+            self: OnlineBatchBuilder, directory: str | Path) -> ExplorationPklCatalog:
+        directory = Path(directory).expanduser().resolve()
+        if not directory.is_dir():
+            raise FileNotFoundError(f"Exploration PKL directory missing: {directory}")
+        paths = sorted((p for p in directory.glob("E*.pkl")
+                        if re.fullmatch(r"E\d{5,}", p.stem)),
+                       key=lambda p: int(p.stem[1:]))
+        if not paths:
+            raise ValueError(f"No E*.pkl files in {directory}")
+        entries = []
+        identity = []
+        for path in paths:
+            summary = self.inspect_exploration_pkl(path)
+            stat = path.stat()
+            entry = ExplorationPklEntry(path, int(summary["frames"]),
+                                        int(summary["windows"]), stat.st_size, stat.st_mtime_ns)
+            entries.append(entry)
+            identity.append((path.name, stat.st_size, stat.st_mtime_ns,
+                             entry.frames, entry.windows))
+        fingerprint = hashlib.sha256(
+            json.dumps(identity, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        return ExplorationPklCatalog(tuple(entries), fingerprint,
+                                     sum(entry.windows for entry in entries))
+
+
+    def plan_exploration_replay(
+            self: OnlineBatchBuilder, catalog: ExplorationPklCatalog,
+            offset: int, requested: int) -> tuple[tuple[ExplorationPklSlice, ...], int]:
+        """Plan exactly requested unused windows, monotonically from first PKL to last."""
+        if requested < 1 or offset < 0 or offset + requested > catalog.total_windows:
+            raise ValueError(f"Not enough offline Exploration windows: "
+                             f"requested={requested} cursor={offset} total={catalog.total_windows}")
+        remaining = requested
+        skip = offset
+        result = []
+        for entry in catalog.entries:
+            if skip >= entry.windows:
+                skip -= entry.windows
+                continue
+            stat = entry.path.stat()
+            if stat.st_size != entry.byte_size or stat.st_mtime_ns != entry.mtime_ns:
+                raise ValueError(f"Exploration dataset changed during E2: {entry.path}")
+            take = min(entry.windows - skip, remaining)
+            result.append(ExplorationPklSlice(entry, skip, skip + take))
+            remaining -= take
+            skip = 0
+            if remaining == 0:
+                break
+        if remaining:
+            raise RuntimeError("Offline catalog cursor mismatch")
+        return tuple(result), offset + requested
+
+
+
+# E2-only helpers. All ZIP methods above remain unchanged.
+@dataclass(frozen=True)
+class ExplorationPklEntry:
+    path: Path
+    frames: int
+    windows: int
+    byte_size: int
+    mtime_ns: int
+
+
+@dataclass(frozen=True)
+class ExplorationPklCatalog:
+    entries: tuple[ExplorationPklEntry, ...]
+    fingerprint: str
+    total_windows: int
+
+
+@dataclass(frozen=True)
+class ExplorationPklSlice:
+    entry: ExplorationPklEntry
+    first_window: int
+    stop_window: int
+
+
+def _open_exploration_pkl(path: Path):
+    """Read a trusted locally collected PKL, without requiring ROS at runtime.
+
+    savers.Trajectory must be importable in the server's Python environment.
+    Set PYTHONPATH to dataset_collector_pkg/scripts when starting E2.
+    """
+    # Import savers BEFORE unpickling, so the original class can be resolved.
+    try:
+        savers = importlib.import_module("savers")
+    except ImportError as exc:
+        raise RuntimeError(
+            "Cannot import savers.py in the VLA-JEPA venv. Add "
+            "dataset_collector_pkg/scripts to PYTHONPATH for E2."
+        ) from exc
+    with path.open("rb") as stream:
+        payload = pickle.load(stream)  # trusted local dataset only
+    if not isinstance(payload, dict) or not isinstance(payload.get("traj"), savers.Trajectory):
+        raise ValueError(f"Invalid savers.Trajectory PKL: {path}")
+    trajectory = payload["traj"]
+    meta = json.loads(trajectory.config_str)
+    if (not isinstance(meta, dict) or meta.get("schema_version") != 1
+            or meta.get("sampling_mode") != "motion_step"
+            or meta.get("source", "exploration") != "exploration"
+            or meta.get("episode_id") != path.stem
+            or re.fullmatch(r"E\d{5,}", path.stem) is None):
+        raise ValueError(f"Unexpected Exploration PKL metadata: {path}")
+    for key, value in meta.items():
+        if payload.get(key) != value:
+            raise ValueError(f"Inconsistent PKL metadata {key}: {path}")
+    return trajectory
+
+
+def _pkl_bgr_to_tensor(bgr: Any, crop: CropMargins | None,
+                       image_size: tuple[int, int]) -> torch.Tensor:
+    """Identical RGB, crop, cv2 resize and [0,1] conversion as the ZIP path."""
+    pixels = np.asarray(bgr)
+    if pixels.ndim != 3 or pixels.shape[2] != 3 or pixels.dtype != np.uint8:
+        raise ValueError(f"Expected BGR uint8 [H,W,3], received {pixels.shape}/{pixels.dtype}")
+    rgb = cv2.cvtColor(np.ascontiguousarray(pixels), cv2.COLOR_BGR2RGB)
+    image = Image.fromarray(rgb, "RGB")
+    if crop is not None:
+        x0, y0 = crop.left, crop.top
+        x1, y1 = image.width - crop.right, image.height - crop.bottom
+        if x0 < 0 or y0 < 0 or x1 <= x0 or y1 <= y0:
+            raise ValueError("Exploration PKL: crop not applicable")
+        image = image.crop((x0, y0, x1, y1))
+    array = cv2.resize(np.asarray(image, dtype=np.uint8), image_size,
+                       interpolation=cv2.INTER_LINEAR)
+    return (torch.from_numpy(np.ascontiguousarray(array))
+            .permute(2, 0, 1).contiguous().to(torch.float32).div_(255.0))
+
+

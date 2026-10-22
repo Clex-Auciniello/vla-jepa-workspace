@@ -86,4 +86,4 @@ exploration_client:
   # Vista DENTRO il container del percorso host:
   # /home/asus-mivia/Desktop/Alex/Train_workspace/vla-jepa/vla_jepa_workspace/data/online_trajectories
   # Il volume workspace deve essere montato in /opt/vla_jepa_train.
-  trajectory_save_path: /opt/vla_jepa_train/data/online_trajectories
+  trajectory_save_path: /opt/vla_jepa_train/data/exploration_trajectories

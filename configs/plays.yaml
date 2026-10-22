@@ -15,7 +15,7 @@ plays:
   # L'osservazione finale è reale, NON una ripetizione artificiale.
   final_settle_s: 0.5
   min_frames: 8
-  save_path: /opt/vla_jepa_train/data/online_plays
+  save_path: /opt/vla_jepa_train/data/plays_trajectories
   # Imporre durante i test il posizionamento libero degli oggetti e nessun intralcio.
   allow_experimental_execution: true
   pick_x_offset_m: 0.03
