@@ -171,7 +171,7 @@ export PYTHONPATH="/opt/vla_jepa_train/src:${PYTHONPATH:-}"
 
 python3 -u -m vla_jepa_online.exploration.exploration_client \
   --config /opt/vla_jepa_train/configs/exploration.yaml \
-  --grid /opt/vla_jepa_train/configs/workspace_grid.json \
+  --grid /opt/vla_jepa_train/configs/workspace_sampling/workspace_grid.json \
   --state /opt/vla_jepa_train/outputs/exploration_state.json
 
 
