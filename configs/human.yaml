@@ -1,0 +1,15 @@
+# Same training recipe as e4.yaml. Only dataset_index and checkpoint_root differ.
+# Paths relative to workspace root when submitted through sbatch.
+dataset_index: data/offline/e3/index.jsonl
+pretrained_path: checkpoints/base
+checkpoint_root: checkpoints/E3
+seed: 1000
+qwen_learning_rate: 1.0e-5
+predictor_learning_rate: 1.0e-5
+front_feature: observation.images.exterior_1_left
+gripper_feature: observation.images.exterior_2_left
+front_crop: null        # already cropped/224? confirm actual source before setting
+# For raw Spark RGB 376x672, IF confirmed, use [140, 0, 90, 10] instead.
+gripper_crop: null
+align_last: true
+forbidden_task_ids: [0, 5, 10, 15]

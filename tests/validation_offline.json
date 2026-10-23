@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "dataset_root": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action",
+  "description": "Offline robot pick-and-place, not used in either WM checkpoint",
+  "seed": 42,
+  "episodes_per_task": 2,
+  "window_size": 8,
+  "stride": 5,
+  "max_windows_per_episode": 4,
+  "prompt": "Pick up the object and place it in the target bin.",
+  "image_encoding": "OpenCV BGR uint8 stored in savers.Trajectory",
+  "preprocessing": {
+    "front_crop_margins_ltrb": [
+      140,
+      0,
+      90,
+      10
+    ],
+    "gripper_crop": null,
+    "resize_wh": [
+      224,
+      224
+    ],
+    "pixel_range": "float32 [0,1]"
+  },
+  "episodes": [
+    {
+      "task_id": 0,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_00/traj014.pkl"
+    },
+    {
+      "task_id": 0,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_00/traj081.pkl"
+    },
+    {
+      "task_id": 1,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_01/traj001.pkl"
+    },
+    {
+      "task_id": 1,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_01/traj018.pkl"
+    },
+    {
+      "task_id": 2,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_02/traj014.pkl"
+    },
+    {
+      "task_id": 2,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_02/traj015.pkl"
+    },
+    {
+      "task_id": 3,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_03/traj006.pkl"
+    },
+    {
+      "task_id": 3,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_03/traj008.pkl"
+    },
+    {
+      "task_id": 4,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_04/traj005.pkl"
+    },
+    {
+      "task_id": 4,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_04/traj034.pkl"
+    },
+    {
+      "task_id": 5,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_05/traj027.pkl"
+    },
+    {
+      "task_id": 5,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_05/traj037.pkl"
+    },
+    {
+      "task_id": 6,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_06/traj001.pkl"
+    },
+    {
+      "task_id": 6,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_06/traj002.pkl"
+    },
+    {
+      "task_id": 7,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_07/traj005.pkl"
+    },
+    {
+      "task_id": 7,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_07/traj013.pkl"
+    },
+    {
+      "task_id": 8,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_08/traj014.pkl"
+    },
+    {
+      "task_id": 8,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_08/traj032.pkl"
+    },
+    {
+      "task_id": 9,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_09/traj001.pkl"
+    },
+    {
+      "task_id": 9,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_09/traj038.pkl"
+    },
+    {
+      "task_id": 10,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_10/traj012.pkl"
+    },
+    {
+      "task_id": 10,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_10/traj035.pkl"
+    },
+    {
+      "task_id": 11,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_11/traj026.pkl"
+    },
+    {
+      "task_id": 11,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_11/traj034.pkl"
+    },
+    {
+      "task_id": 12,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_12/traj014.pkl"
+    },
+    {
+      "task_id": 12,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_12/traj028.pkl"
+    },
+    {
+      "task_id": 13,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_13/traj017.pkl"
+    },
+    {
+      "task_id": 13,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_13/traj037.pkl"
+    },
+    {
+      "task_id": 14,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_14/traj000.pkl"
+    },
+    {
+      "task_id": 14,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_14/traj010.pkl"
+    },
+    {
+      "task_id": 15,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_15/traj021.pkl"
+    },
+    {
+      "task_id": 15,
+      "path": "/mnt/beegfs/frosa/robot_datasets/dataset/opt_dataset/pick_place/real_new_ur5e_pick_place_delta_action/task_15/traj027.pkl"
+    }
+  ]
+}
