@@ -69,6 +69,7 @@ class OnlineTrainerConfig:
     checkpoint_root: str | Path = "checkpoints/exploration"
     # Due soli slot sul disco: checkpoint_A e checkpoint_B.
     keep_last_checkpoints: int = 2
+    auto_checkpoint: bool = True
 
 
 class OnlineVideoTrainer:
@@ -374,7 +375,10 @@ class OnlineVideoTrainer:
             self.source_window_counts[source] += windows
 
             checkpoint: Path | None = None
-            if self.processed_videos % self.cfg.checkpoint_every_videos == 0:
+            if (
+                self.cfg.auto_checkpoint
+                and self.processed_videos % self.cfg.checkpoint_every_videos == 0
+            ):
                 # Eccezione al batch effettivo 10: forziamo uno step sulla
                 # media delle finestre residue solo al confine dei checkpoint.
                 if self.pending_windows:
