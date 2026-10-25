@@ -1,14 +1,16 @@
-# Same training recipe as e4.yaml. Only dataset_index and checkpoint_root differ.
-# Paths relative to workspace root when submitted through sbatch.
-dataset_index: data/offline/e3/index.jsonl
+# E3: video umani; la frontale viene passata anche come seconda vista.
+dataset_root: /mnt/beegfs/a.cuciniello9/datasets/human/human_rgb_pick_place_preprocessed
 pretrained_path: checkpoints/base
 checkpoint_root: checkpoints/E3
-seed: 1000
+
+camera_count: 1
+epochs: 100
+window_size: 8
+stride: 5
+batch_size: 4                 # Finestre per GPU
+gradient_accumulation_steps: 2
+
 qwen_learning_rate: 1.0e-5
 predictor_learning_rate: 1.0e-5
-front_feature: observation.images.exterior_1_left
-gripper_feature: observation.images.exterior_2_left
-front_crop: null        
-gripper_crop: null
-align_last: true
-forbidden_task_ids: [0, 5, 10, 15]
+grad_clip_norm: 1.0
+seed: 1000

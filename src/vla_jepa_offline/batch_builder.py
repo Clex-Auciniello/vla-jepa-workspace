@@ -1,54 +1,31 @@
-"""Exact OnlineBatchBuilder RGB conversion reused for E3 and E4."""
+"""Converte le finestre RGB già pronte nel batch usato da VLA-JEPA."""
 from __future__ import annotations
-
-from dataclasses import dataclass
-from typing import Iterator
 
 import torch
 
-from vla_jepa_online.training_server.online_batch_builder import (
-    CropMargins, _pkl_bgr_to_tensor, _window_starts,
-)
-from .dataset import OfflineEpisode
+from .dataset import OfflineWindowDataset
+
+FRONT_FEATURE = "observation.images.exterior_1_left"
+GRIPPER_FEATURE = "observation.images.exterior_2_left"
 
 
-@dataclass(frozen=True)
-class OfflineBatchConfig:
-    front_feature: str = "observation.images.exterior_1_left"
-    gripper_feature: str = "observation.images.exterior_2_left"
-    window_size: int = 8
-    stride: int = 5
-    front_crop: CropMargins | None = None
-    gripper_crop: CropMargins | None = None
-    align_last: bool = True
+def _rgb_to_tensor(images: torch.Tensor) -> torch.Tensor:
+    # [B, T, H, W, C] uint8 RGB -> [B, T, C, H, W] float32 [0, 1].
+    if images.dtype != torch.uint8 or tuple(images.shape[-3:]) != (224, 224, 3):
+        raise ValueError(f"Attese immagini RGB uint8 224x224: {images.shape}, {images.dtype}")
+    return images.permute(0, 1, 4, 2, 3).contiguous().float().div_(255.0)
 
 
-def parse_crop(margins) -> CropMargins | None:
-    if margins is None:
-        return None
-    if not isinstance(margins, (list, tuple)) or len(margins) != 4:
-        raise ValueError("Crop must be null or [left,top,right,bottom]")
-    ints = [int(v) for v in margins]
-    if any(a != b for a, b in zip(ints, margins)) or min(ints) < 0:
-        raise ValueError(f"Invalid crop: {margins}")
-    return CropMargins(*ints)
-
-
-def iter_batches(episode: OfflineEpisode, cfg: OfflineBatchConfig) -> Iterator[dict]:
-    starts = _window_starts(episode.count, window_size=cfg.window_size,
-                            stride=cfg.stride, repeat_last=cfg.align_last)
-    for start in starts:
-        raw = [episode.rgb(idx) for idx in range(start, start + cfg.window_size)]
-        front = torch.stack([
-            _pkl_bgr_to_tensor(pair[0], cfg.front_crop, (224, 224))
-            for pair in raw
-        ]).unsqueeze(0)
-        wrist = torch.stack([
-            _pkl_bgr_to_tensor(pair[1], cfg.gripper_crop, (224, 224))
-            for pair in raw
-        ]).unsqueeze(0)
-        yield {
-            cfg.front_feature: front,
-            cfg.gripper_feature: wrist,
-            "task": [episode.spec.task],
-        }
+def make_batch(dataset: OfflineWindowDataset, indices: list[int], device: torch.device) -> dict:
+    samples = [dataset[i] for i in indices]
+    front = _rgb_to_tensor(torch.stack([sample["front"] for sample in samples])).to(device)
+    if dataset.camera_count == 2:
+        wrist = _rgb_to_tensor(torch.stack([sample["gripper"] for sample in samples])).to(device)
+    else:
+        # E3: la seconda vista è la stessa frontale. Nessuna copia nel PKL.
+        wrist = front
+    return {
+        FRONT_FEATURE: front,
+        GRIPPER_FEATURE: wrist,
+        "task": [sample["task"] for sample in samples],
+    }

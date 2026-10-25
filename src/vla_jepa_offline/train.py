@@ -1,8 +1,7 @@
-"""One shared offline CLI for E3/E4; no Flask or ROS.
+"""Entrypoint comune per il continued pretraining offline E3 ed E4.
 
-Example:
-  python -m vla_jepa_offline.train --config configs/offline/e3.yaml --preflight-only
-  python -m vla_jepa_offline.train --config configs/offline/e3.yaml
+Esecuzione su quattro A100: torchrun --standalone --nproc_per_node=4
+    -m vla_jepa_offline.train --config configs/offline/real_robot.yaml
 """
 from __future__ import annotations
 
@@ -10,190 +9,125 @@ import argparse
 import hashlib
 import json
 import os
+import random
 from pathlib import Path
-import signal
-import sys
-import time
 
+import numpy as np
+import torch
+import torch.distributed as dist
 import yaml
 
-from .batch_builder import OfflineBatchConfig, iter_batches, parse_crop
-from .dataset import OfflineEpisode, load_index
-from .trainer import create_trainer, latest_checkpoint
-
-stop_requested = False
+from .dataset import OfflineWindowDataset, build_catalog
+from .trainer import OfflineTrainer
 
 
-def _request_stop(signum, frame):
-    global stop_requested
-    stop_requested = True
-    print(f"Received signal {signum}: finish current episode, checkpoint, then stop", flush=True)
+def init_distributed():
+    rank = int(os.environ.get("RANK", "0"))
+    local_rank = int(os.environ.get("LOCAL_RANK", "0"))
+    world_size = int(os.environ.get("WORLD_SIZE", "1"))
+    if world_size > 1:
+        torch.cuda.set_device(local_rank)
+        dist.init_process_group(backend="nccl")
+    return rank, local_rank, world_size
 
 
-def _absolute(value: str) -> str:
-    return str(Path(value).expanduser().resolve())
+def dataset_identity(catalog, cfg: dict) -> str:
+    """Impronta semplice di file e impostazioni per un resume coerente."""
+    digest = hashlib.sha256()
+    for episode in catalog:
+        stat = Path(episode.path).stat()
+        digest.update(f"{episode.path}|{stat.st_size}|{stat.st_mtime_ns}|"
+                      f"{episode.task_id}|{episode.frames}|{episode.task}\n".encode())
+    settings = {key: cfg[key] for key in (
+        "pretrained_path", "camera_count", "window_size", "stride", "seed",
+        "batch_size", "gradient_accumulation_steps", "qwen_learning_rate",
+        "predictor_learning_rate", "grad_clip_norm")}
+    digest.update(json.dumps(settings, sort_keys=True).encode())
+    return digest.hexdigest()
 
 
-def _atomic_json(path: Path, data: dict):
-    temporary = path.with_name(path.name + f".{os.getpid()}.tmp")
-    temporary.write_text(json.dumps(data, sort_keys=True, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--preflight-only", action="store_true",
+                        help="Controlla i PKL senza caricare il modello")
+    args = parser.parse_args()
+    cfg = yaml.safe_load(args.config.read_text())
+    rank, local_rank, world_size = init_distributed()
 
+    try:
+        if int(cfg["batch_size"]) != 4 or int(cfg["gradient_accumulation_steps"]) != 2:
+            raise ValueError("Ricetta fissata: batch_size=4 per GPU e accumulation=2")
+        if int(cfg["camera_count"]) not in (1, 2):
+            raise ValueError("camera_count deve essere 1 per E3 oppure 2 per E4")
+        if not args.preflight_only and world_size != 4:
+            raise ValueError("Questo esperimento richiede torchrun con quattro processi GPU")
+        if int(cfg["window_size"]) != 8 or int(cfg["stride"]) != 5:
+            raise ValueError("Ricetta fissata: finestre di 8 frame con stride 5")
 
-def _dataset_files(entries):
-    from .dataset import _file_list
-    for e in entries:
-        if e.pkl_path is not None:
-            yield e.pkl_path
-        else:
-            yield from _file_list(e.front_dir)
-            yield from _file_list(e.gripper_dir)
+        # Il rank 0 apre i PKL una sola volta per ottenere lunghezze e prompt.
+        catalog = build_catalog(cfg["dataset_root"]) if rank == 0 else None
+        if world_size > 1:
+            result = [catalog]
+            dist.broadcast_object_list(result, src=0)
+            catalog = result[0]
+        dataset = OfflineWindowDataset(
+            catalog, cfg["window_size"], cfg["stride"], cfg["camera_count"])
+        identity = dataset_identity(catalog, cfg)
 
+        if rank == 0:
+            print(f"Dataset: {len(catalog)} episodi, {len(dataset)} finestre ",
+                  f"({cfg['camera_count']} camera/e)", flush=True)
+            first = dataset[0]
+            print(f"Prima finestra: RGB uint8 {tuple(first['front'].shape)}, "
+                  f"prompt={first['task']!r}", flush=True)
+        if args.preflight_only:
+            return
 
-def _identity(entries, index_digest, cfg: dict, batch_cfg: OfflineBatchConfig):
-    # Manifest AND the file identities prevent silent resume after an edit.
-    h = hashlib.sha256()
-    for p in _dataset_files(entries):
-        st = p.stat()
-        h.update(f"{p}|{st.st_size}|{st.st_mtime_ns}\n".encode("utf-8"))
-    p = Path(cfg["pretrained_path"]).resolve()
-    source = {}
-    for fn in ("model.safetensors", "config.json"):
-        f = p / fn
-        if not f.is_file():
-            raise FileNotFoundError(f"Missing pretrained {f}")
-        st = f.stat()
-        source[fn] = {"size": st.st_size, "mtime_ns": st.st_mtime_ns}
-    return {
-        "format_version": 1,
-        "dataset_index_sha256": index_digest,
-        "dataset_files_stat_sha256": h.hexdigest(),
-        "episode_ids": [e.episode_id for e in entries],
-        "pretrained_path": _absolute(cfg["pretrained_path"]),
-        "pretrained_stat": source,
-        "qwen_lr": float(cfg.get("qwen_learning_rate", 1e-5)),
-        "predictor_lr": float(cfg.get("predictor_learning_rate", 1e-5)),
-        "seed": int(cfg.get("seed", 1000)),
-        "batch": {
-            "front_feature": batch_cfg.front_feature,
-            "gripper_feature": batch_cfg.gripper_feature,
-            "window_size": batch_cfg.window_size,
-            "stride": batch_cfg.stride,
-            "align_last": batch_cfg.align_last,
-            "front_crop": cfg.get("front_crop"),
-            "gripper_crop": cfg.get("gripper_crop"),
-        },
-    }
+        # Seed iniziale distinto per GPU; l'ordine delle finestre è comune.
+        random.seed(cfg["seed"] + rank)
+        np.random.seed(cfg["seed"] + rank)
+        torch.manual_seed(cfg["seed"] + rank)
+        torch.cuda.manual_seed(cfg["seed"] + rank)
+        trainer = OfflineTrainer(cfg, rank=rank, local_rank=local_rank,
+                                 world_size=world_size, dataset_identity=identity)
 
+        total_batch = cfg["batch_size"] * world_size * cfg["gradient_accumulation_steps"] # 4 x 4 x 2 = 32
+        if rank == 0:
+            print(f"DDP: {world_size} GPU, batch/GPU={cfg['batch_size']}, "
+                  f"accum={cfg['gradient_accumulation_steps']}, globale={total_batch}; "
+                  f"resume da epoca {trainer.next_epoch}", flush=True)
 
-def main(argv=None):
-    cli = argparse.ArgumentParser(description=__doc__)
-    cli.add_argument("--config", required=True, type=Path)
-    cli.add_argument("--preflight-only", action="store_true")
-    cli.add_argument("--max-episodes", type=int, default=0,
-                     help="For smoke tests; choose a SEPARATE checkpoint_root")
-    args = cli.parse_args(argv)
-    cfg = yaml.safe_load(args.config.read_text(encoding="utf-8"))
-    if not isinstance(cfg, dict):
-        raise ValueError("Config must be a YAML dictionary")
-    for key in ("dataset_index", "pretrained_path", "checkpoint_root"):
-        if not isinstance(cfg.get(key), str) or not cfg[key].strip():
-            raise ValueError(f"Missing YAML setting {key}")
-    if args.max_episodes < 0:
-        raise ValueError("max-episodes must be >=0")
-    entries, index_digest = load_index(cfg["dataset_index"])
-    forbidden = set(cfg.get("forbidden_task_ids", []))
-    for e in entries:
-        if forbidden and e.task_id is None:
-            raise ValueError(f"Task ID required to exclude held-out tasks: {e.episode_id}")
-        if e.task_id in forbidden:
-            raise ValueError(f"Held-out task {e.task_id} found in WM data: {e.episode_id}")
-    if args.max_episodes:
-        entries = entries[:args.max_episodes]
-    batch = OfflineBatchConfig(
-        front_feature=cfg.get("front_feature", "observation.images.exterior_1_left"),
-        gripper_feature=cfg.get("gripper_feature", "observation.images.exterior_2_left"),
-        front_crop=parse_crop(cfg.get("front_crop")),
-        gripper_crop=parse_crop(cfg.get("gripper_crop")),
-        align_last=bool(cfg.get("align_last", True)),
-    )
-    if batch.front_feature == batch.gripper_feature:
-        raise ValueError("Two input feature names must be distinct")
-    processed_frames, processed_windows = 0, 0
-    print(f"Index: {cfg['dataset_index']}; episodes={len(entries)}", flush=True)
-    if args.preflight_only:
-        from vla_jepa_online.training_server.online_batch_builder import _window_starts
-        for j, spec in enumerate(entries, 1):
-            reader = OfflineEpisode(spec)
-            processed_frames += reader.validate(batch.front_crop, batch.gripper_crop)
-            processed_windows += len(_window_starts(reader.count, window_size=8, stride=5,
-                                                     repeat_last=batch.align_last))
-            if j % 20 == 0 or j == len(entries):
-                print(f"PREFLIGHT {j}/{len(entries)} videos; {processed_frames} frames; "
-                      f"{processed_windows} windows", flush=True)
-        print("PREFLIGHT_OK (without any model/optimizer updates)", flush=True)
-        return
+        for epoch in range(trainer.next_epoch, int(cfg["epochs"])):
+            order = dataset.epoch_indices(int(cfg["seed"]), epoch)
+            loss_sum = 0.0
+            for start in range(0, len(order), total_batch):
+                # Nell'ultimo gruppo possono esserci meno di 32 finestre.
+                group = order[start:start + total_batch]
+                loss_sum += trainer.train_group(dataset, group)
+                if rank == 0 and trainer.global_step % 20 == 0:
+                    print(f"Epoca {epoch + 1}/{cfg['epochs']} | "
+                          f"optimizer step {trainer.global_step}", flush=True)
 
-    root = Path(cfg["checkpoint_root"]).expanduser().resolve()
-    root.mkdir(parents=True, exist_ok=True)
-    identity_path = root / "offline_dataset_identity.json"
-    identity = _identity(entries, index_digest, cfg, batch)
-    if identity_path.is_file():
-        old = json.loads(identity_path.read_text("utf-8"))
-        if old != identity:
-            raise RuntimeError("Dataset or training configuration changed since checkpoint; use a new output dir")
-    else:
-        if latest_checkpoint(root) is not None:
-            raise RuntimeError("Checkpoint exists but no offline dataset identity: refuse unsafe resume")
-        _atomic_json(identity_path, identity)
+            values = torch.tensor([loss_sum, len(order)], dtype=torch.float64,
+                                  device=f"cuda:{local_rank}")
+            # Solo la loss è una somma locale; len(order) è già globale.
+            dist.all_reduce(values, op=dist.ReduceOp.SUM)
+            epoch_loss = float(values[0] / len(order))
+            saved = trainer.save_checkpoint(next_epoch=epoch + 1)
+            if rank == 0:
+                report = {"epoch": epoch + 1, "mean_wm_loss": epoch_loss,
+                          "global_step": trainer.global_step, "windows": len(order),
+                          "checkpoint": str(saved)}
+                with (trainer.root / "offline_metrics.jsonl").open("a") as stream:
+                    stream.write(json.dumps(report) + "\n")
+                print(json.dumps(report), flush=True)
 
-    trainer = create_trainer(
-        pretrained_path=cfg["pretrained_path"],
-        checkpoint_root=str(root),
-        seed=int(cfg.get("seed", 1000)),
-        qwen_lr=float(cfg.get("qwen_learning_rate", 1e-5)),
-        predictor_lr=float(cfg.get("predictor_learning_rate", 1e-5)),
-    )
-    if trainer.processed_videos > len(entries):
-        raise RuntimeError("Checkpoint contains more videos than offline dataset")
-    if set(trainer.image_keys) != {batch.front_feature, batch.gripper_feature}:
-        raise RuntimeError(f"Features disagree with checkpoint: {trainer.image_keys}")
-    if trainer.processed_videos and latest_checkpoint(root) is None:
-        raise RuntimeError("Invalid resume state")
-    print(f"READY resumed_videos={trainer.processed_videos}; global_step={trainer.global_step}; "
-          f"trainable_parameters={trainer.num_trainable_parameters}", flush=True)
-    signal.signal(signal.SIGTERM, _request_stop)
-    signal.signal(signal.SIGUSR1, _request_stop)
-    signal.signal(signal.SIGINT, _request_stop)
-
-    metrics = root / "offline_metrics.jsonl"
-    # A metrics line is written AFTER the episode has finished. The checkpoint
-    # is authoritative: on crash it is safe to replay episodes not checkpointed.
-    for index in range(trainer.processed_videos, len(entries)):
-        if stop_requested:
-            break
-        spec = entries[index]
-        reader = OfflineEpisode(spec)
-        reader.validate(batch.front_crop, batch.gripper_crop)
-        started = time.monotonic()
-        stats = trainer.train_episode(spec.episode_id, iter_batches(reader, batch))
-        row = {
-            "event": "episode_complete", "episode_id": spec.episode_id,
-            "task_id": spec.task_id, "duration_sec": round(time.monotonic() - started, 3),
-            **stats,
-        }
-        with metrics.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(row) + "\n")
-        print(json.dumps(row), flush=True)
-        del reader
-
-    if trainer.processed_videos > 0 and trainer.processed_videos % trainer.cfg.checkpoint_every_videos != 0:
-        final_ckpt = trainer.save_checkpoint()
-        print(f"SAFE_CHECKPOINT={final_ckpt}", flush=True)
-    elif trainer.processed_videos > 0:
-        print(f"SAFE_CHECKPOINT={latest_checkpoint(root)}", flush=True)
-    print(f"EXIT videos={trainer.processed_videos}/{len(entries)} "
-          f"steps={trainer.global_step} interrupted={stop_requested}", flush=True)
+        if rank == 0:
+            print("TRAINING COMPLETATO", flush=True)
+    finally:
+        if world_size > 1 and dist.is_initialized():
+            dist.destroy_process_group()
 
 
 if __name__ == "__main__":
