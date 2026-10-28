@@ -4,7 +4,7 @@ pretrained_path: checkpoints/base
 checkpoint_root: checkpoints/E3
 
 camera_count: 1
-epochs: 100
+epochs: 500
 window_size: 8
 stride: 5
 batch_size: 4                 # Finestre per GPU
