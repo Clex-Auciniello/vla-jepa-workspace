@@ -36,6 +36,7 @@ TRAIN_TASKS = (1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14)
 DEFAULT_SOURCE = Path('/mnt/beegfs/a.cuciniello9/datasets/robotic/scripted_trajectories')
 DEFAULT_DEST = Path('/mnt/beegfs/a.cuciniello9/datasets/robotic/scripted_trajectories_delta')
 SCALE = 0.05
+GRIPPER_THRESHOLD = 0.38
 IMAGE_NAMES = (
     'camera_front_image', 'camera_front_depth',
     'left_camera_image', 'left_camera_depth',
@@ -46,6 +47,7 @@ KEY_RENAMES = {
     'gripper_camera_image': 'camera_gripper_image',
     'gripper_camera_depth': 'camera_gripper_depth',
 }
+
 
 
 def as_shape(value, n: int, name: str, source: Path, t: int) -> np.ndarray:
@@ -158,6 +160,14 @@ def prepare_conversion(payload: dict, src: Path):
         raise ValueError(f'{src}: old action quaternion differs from observed eef_quat')
 
     old_gripper = old_actions[:, 7]
+    # Posizione reale osservata del gripper in ogni frame.
+    gripper_qpos = np.array([
+        as_shape(s['obs']['gripper_qpos'], 1, 'gripper_qpos', src, t)[0]
+        for t, s in enumerate(steps)
+    ])   
+
+    # 0 = Open, 1 = Closed
+    gripper_state = (gripper_qpos >= GRIPPER_THRESHOLD).astype(np.float32)
     if not np.isclose(old_gripper, np.round(old_gripper), atol=1e-8).all() or \
             not np.isin(np.round(old_gripper).astype(np.int64), [0, 1]).all():
         raise ValueError(f'{src}: unexpected gripper command(s): {np.unique(old_gripper)}')
@@ -171,7 +181,7 @@ def prepare_conversion(payload: dict, src: Path):
     delta_action = np.zeros((T, 7), dtype=np.float32)
     delta_action[:-1, 0:3] = d_xyz
     delta_action[:-1, 3:6] = d_euler
-    delta_action[:-1, 6] = old_gripper[:-1] / SCALE
+    delta_action[:-1, 6] = gripper_state[1:] / SCALE
     # delta_action[-1, :] stays all zero, including the gripper.
 
     # Verify the EXACT actions we will store, including float32 rounding.

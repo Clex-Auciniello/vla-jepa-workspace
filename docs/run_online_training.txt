@@ -1,3 +1,5 @@
+cd /home/asus-mivia/Desktop/Alex/UR5e-2f-85
+
 export ROBOT_IP=192.168.1.100
 
 export UR5e_2f_85_PATH="/home/asus-mivia/Desktop/Alex/UR5e-2f-85"
@@ -9,6 +11,8 @@ export VLA_JEPA_CHECKPOINT_HOST="/home/asus-mivia/Desktop/UR-Control/UR5e-2f-85/
 export VLA_JEPA_HF_CACHE_HOST="/home/asus-mivia/Desktop/Alex/UR5e-2f-85/ai_controller/ai_controller/models/vla_jepa_controller/huggingface"
 
 export VLA_JEPA_TRAIN_WORKSPACE_HOST="/home/asus-mivia/Desktop/Alex/Train_workspace/vla-jepa/vla_jepa_workspace"
+
+
 
 # Primo terminale
 ## UR-Container 

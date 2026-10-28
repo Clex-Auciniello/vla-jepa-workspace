@@ -51,6 +51,8 @@ import savers  # Needed for unpickling and creating savers.Trajectory
 
 TRAIN_TASKS = (1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14)
 SCALE = 0.05
+SCALE = 0.05
+GRIPPER_THRESHOLD = 0.38
 FRONT_CROP_MARGINS = (0, 10, 140, 90)  # top, bottom, left, right
 IMG_SIZE = (224, 224)
 OB_KEYS = (
@@ -260,6 +262,17 @@ def scripted_episode(source: Path, *, task, instruction, input_order):
     if not isinstance(raw, list) or len(raw) < 2:
         raise ValueError(f'{source}: Trajectory._data must be a nonempty list of 5-tuples')
     T = len(raw)
+
+    gripper_qpos = np.asarray([
+        float(np.asarray(item[0]['gripper_qpos']).reshape(-1)[0])
+        for item in raw
+    ], dtype=np.float32)
+
+    if not np.isfinite(gripper_qpos).all():
+        raise ValueError(f'{source}: invalid gripper_qpos')
+
+    observed_gripper = (gripper_qpos >= GRIPPER_THRESHOLD).astype(np.float32)
+
     traj_out = empty_trajectory()
     for t, item in enumerate(raw):
         if not isinstance(item, tuple) or len(item) != 5:
@@ -270,15 +283,22 @@ def scripted_episode(source: Path, *, task, instruction, input_order):
             raise ValueError(f'{source}: invalid gripper action {a[6]}')
         if t == T-1 and not np.allclose(a, 0, atol=1e-6):
             raise ValueError(f'{source}: last action is not all zero')
+        if t < T - 1:
+            expected_gripper_action = observed_gripper[t + 1] / SCALE
+
+            if not np.isclose(a[6], expected_gripper_action, atol=1e-5):
+                raise ValueError(
+                    f'{source}: action[{t}, 6] does not match gripper state[{t+1}]'
+                )
         pos = as_float(obs['eef_pos'], (3,), 'eef_pos')
         quat = as_float(obs['eef_quat'], (4,), 'eef_quat')
         if not np.isclose(np.linalg.norm(quat), 1.0, atol=1e-3):
             raise ValueError(f'{source}: invalid quaternion at step {t}')
         angles = Rotation.from_quat(quat.astype(np.float64)).as_euler('xyz').astype(np.float32)
         eef = np.concatenate([pos, angles]).astype(np.float32)
-        # For scripted, no TFRecord 2D gripper sensor exists. The observed
-        # gripper_state proxy is the existing binary command (0/20 -> 0/1).
-        binary_grip = np.float32(a[6] * SCALE)
+        # Stato corrente misurato del gripper.
+        binary_grip = observed_gripper[t]
+
         gstate = np.asarray([0.0, binary_grip], dtype=np.float32)
         world = np.concatenate([eef, gstate[1:2]]).astype(np.float32)
         f_obs = {
@@ -320,7 +340,9 @@ def scripted_episode(source: Path, *, task, instruction, input_order):
             'front_crop_margins_top_bottom_left_right': list(FRONT_CROP_MARGINS),
             'camera_gripper_crop': False, 'image_shape': [224,224,3],
             'action_scale_factor': SCALE, 'scripted_action_already_delta': True,
-            'scripted_gripper_state_proxy_from_action': True,
+            'scripted_gripper_state_proxy_source': 'observation.gripper_qpos',
+            'scripted_gripper_threshold': GRIPPER_THRESHOLD,
+            'scripted_gripper_action_target': 'next_frame_gripper_state',
         },
     }
 
