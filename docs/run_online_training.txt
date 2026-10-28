@@ -169,20 +169,11 @@ set -o pipefail
   --seed 1000 \
   2>&1 | tee -a logs/online_server.log
 
-## RUN EXPERIMENT 2 -- mixed play online exploration
+## RUN EXPERIMENT 2 -- plays
 
 "$VENV/bin/python" -u -m vla_jepa_online.training_server.server \
-  --host 127.0.0.1 \
-  --port 8765 \
-  --mode mixed \
-  --offline-exploration-dir /opt/vla_jepa_train/data/exploration_trajectories \
-  --checkpoint-root /opt/vla_jepa_train/checkpoints/exploration_plays \
-  --pretrained-path /opt/vla_jepa_train/checkpoints/base \
-  --max-queue 3 \
-  --qwen-lr 1e-5 \
-  --predictor-lr 1e-5 \
-  --seed 1000 \
-  2>&1 | tee -a logs/mixed_server.log
+  --mode plays \
+  2>&1 | tee -a logs/plays_server.log
 
 
 # Sesto terminale

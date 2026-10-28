@@ -117,14 +117,27 @@ def _checkpoint_latest(root: Path) -> Path | None:
 class ServerConfig:
     host: str = "127.0.0.1"
     port: int = 8765
-    checkpoint_root: str | Path = "checkpoints/exploration"
+    # Se non specificato, ogni esperimento utilizza una directory separata.
+    # Exploration mantiene ESATTAMENTE il percorso usato in precedenza.
+    checkpoint_root: str | Path | None = None
 
     # Episodi in attesa, escluso quello attualmente in training.
     max_queued_episodes: int = 3
 
-    # E1 is the original online Exploration server. E2 uses offline PKLs.
+    # exploration: solo online E; plays: solo online P; mixed: P + E offline.
     mode: str = "exploration"
     offline_exploration_dir: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.checkpoint_root is None:
+            defaults = {
+                "exploration": "checkpoints/exploration",
+                "plays": "checkpoints/plays_online",
+                "mixed": "checkpoints/exploration_plays",
+            }
+            if self.mode not in defaults:
+                raise ValueError(f"Modalita' non riconosciuta: {self.mode}")
+            object.__setattr__(self, "checkpoint_root", defaults[self.mode])
 
 
 @dataclass(frozen=True)
@@ -159,7 +172,7 @@ class TrainingService:
                 "Il limite della coda deve essere almeno 1"
             )
 
-        if cfg.mode not in ("exploration", "mixed"):
+        if cfg.mode not in ("exploration", "plays", "mixed"):
             raise ValueError(f"Unknown experiment mode: {cfg.mode}")
         if cfg.mode == "mixed" and not cfg.offline_exploration_dir:
             raise ValueError("E2 requires offline_exploration_dir")
@@ -521,16 +534,19 @@ class TrainingService:
                 )
             }, 400
 
-        if self.cfg.mode == "mixed":
-            # ZIPs remain the online Plays wire format; E comes from local PKLs.
+        if self.cfg.mode in ("plays", "mixed"):
+            # In entrambe le modalita' si ricevono SOLO Play online P*.
+            # 'mixed' aggiungera' Exploration offline in seguito nel worker;
+            # 'plays' NON eseguira' alcun replay o bilanciamento.
+            # Exploration non passa da questa verifica: comportamento invariato.
             try:
                 with zipfile.ZipFile(io.BytesIO(payload), "r") as archive:
                     manifest = json.loads(archive.read("manifest.json"))
                 if (manifest.get("source") != "plays"
                         or re.fullmatch(r"P\d{5,}", episode_id) is None):
-                    raise ValueError("E2 accepts only online Plays P*.zip")
+                    raise ValueError("Sono consentiti soltanto Plays online P*.zip")
             except Exception as exc:
-                return {"error": f"E2 source not valid: {exc}"}, 400
+                return {"error": f"Sorgente incompatibile con {self.cfg.mode}: {exc}"}, 400
 
         # Seconda verifica sotto lock:
         # un'altra richiesta potrebbe aver occupato la coda.
@@ -671,14 +687,37 @@ class TrainingService:
 
             # Identifica l'ultimo checkpoint A/B disponibile.
             resume = _checkpoint_latest(root)
+            if (self.cfg.mode == "plays" and resume is None
+                    and any((root / slot).exists() for slot in ("checkpoint_A", "checkpoint_B"))):
+                # Non ripartire inavvertitamente da DROID se esistono slot
+                # Plays ma nessuno e' completo/caricabile.
+                raise RuntimeError(
+                    "Checkpoint Plays presenti ma nessuno valido: "
+                    "resume automatico impossibile. Controllare gli slot A/B."
+                )
 
             LOGGER.info(
                 "Caricamento VLA-JEPA da %s",
                 resume or "DROID base",
             )
 
-            # Il modello viene creato una sola volta.
+            # Il modello viene creato una sola volta; il resume usa SEMPRE
+            # l'ultimo checkpoint A/B del root dell'esperimento scelto.
             trainer = self.trainer_factory(resume)
+            if self.cfg.mode == "plays" and resume is not None:
+                # Protezione extra: nessun resume P-only da checkpoint E/mixed.
+                # Il trainer attuale salva i contatori E/P negli stessi slot.
+                counts = getattr(trainer, "source_video_counts", None)
+                legacy = int(getattr(trainer, "legacy_unclassified_videos", 0))
+                if (not isinstance(counts, dict)
+                        or legacy != 0
+                        or int(counts.get("E", 0)) != 0
+                        or int(counts.get("other", 0)) != 0
+                        or int(counts.get("P", 0)) != int(trainer.processed_videos)):
+                    raise RuntimeError(
+                        "Resume Plays-only rifiutato: il checkpoint non contiene "
+                        "esclusivamente video Plays. Scegliere il root corretto."
+                    )
             if self.cfg.mode == "mixed":
                 self._initialize_mixed(trainer, resume)
 
@@ -772,8 +811,9 @@ class TrainingService:
                         )
                         yield window.batch
 
-                if self.cfg.mode == "exploration":
-                    # E1: original single train_episode call, with prompt logging.
+                if self.cfg.mode in ("exploration", "plays"):
+                    # Online-only: un SOLO train_episode per ogni video ricevuto.
+                    # Il codice dell'E1 Exploration e' esattamente lo stesso.
                     result = self._trainer.train_episode(
                         episode_id,
                         play_batches(),
@@ -1106,7 +1146,9 @@ def main() -> None:
 
     parser.add_argument(
         "--checkpoint-root",
-        default="checkpoints/exploration",
+        default=None,
+        help=("Opzionale: senza flag si usa il root dedicato alla mode "
+              "(exploration/plays_online/exploration_plays)"),
     )
 
     parser.add_argument(
@@ -1140,8 +1182,9 @@ def main() -> None:
     )
 
     parser.add_argument(
-        "--mode", choices=("exploration", "mixed"), default="exploration",
-        help="exploration=original E1; mixed=online Plays + offline PKL Exploration",
+        "--mode", choices=("exploration", "plays", "mixed"), default="exploration",
+        help=("exploration=online E (default); plays=online P senza replay; "
+              "mixed=online P + Exploration offline"),
     )
     parser.add_argument(
         "--offline-exploration-dir", default=None,
@@ -1162,6 +1205,11 @@ def main() -> None:
         max_queued_episodes=args.max_queue,
         mode=args.mode,
         offline_exploration_dir=args.offline_exploration_dir,
+    )
+
+    LOGGER.info(
+        "ESPERIMENTO mode=%s checkpoint_root=%s base=%s (training online attivo; resume automatico)",
+        cfg.mode, cfg.checkpoint_root, args.pretrained_path,
     )
 
     def factory(resume_path: Path | None):
