@@ -105,7 +105,7 @@ def scripted_image(value, *, crop_front: bool, input_order: str) -> np.ndarray:
         bgr_or_rgb = bgr_or_rgb[top:h-bottom, left:w-right]
         if bgr_or_rgb.size == 0:
             raise ValueError('Empty front crop')
-    resized = cv2.resize(bgr_or_rgb, IMG_SIZE, interpolation=cv2.INTER_AREA)
+    resized = cv2.resize(bgr_or_rgb, IMG_SIZE, interpolation=cv2.INTER_LINEAR)
     return np.ascontiguousarray(
         cv2.cvtColor(resized, cv2.COLOR_BGR2RGB) if input_order == 'bgr' else resized
     )

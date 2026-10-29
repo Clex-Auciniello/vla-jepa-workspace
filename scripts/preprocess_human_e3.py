@@ -18,7 +18,7 @@ Therefore, cv2.imdecode output is treated as RGB by default; do NOT blindly
 apply cv2.COLOR_BGR2RGB here. --decoded-color-order bgr is an opt-in override.
 
 Front crop: (top,bottom,left,right) = (0,10,140,90), applied before resize.
-OpenCV resize: INTER_AREA, size=(224,224), exactly like E4 merge pipeline.
+OpenCV resize: INTER_LINEAR, size=(224,224), exactly like E4 merge pipeline.
 No fake proprioception, actions, gripper state, padding, truncation, or windows.
 
 RGB arrays are stored directly in Trajectory._data native 5-tuples, because
@@ -112,7 +112,7 @@ def decode_and_resize_front(value, *, path: Path, t: int, decoded_color_order: s
     cropped = image[top:height-bottom, left:width-right]
     if cropped.shape != (366, 442, 3):
         raise AssertionError(f'{path} step {t}: unexpected crop shape {cropped.shape}')
-    resized = cv2.resize(cropped, TARGET_SIZE, interpolation=cv2.INTER_AREA)
+    resized = cv2.resize(cropped, TARGET_SIZE, interpolation=cv2.INTER_LINEAR)
     if decoded_color_order == 'bgr':
         resized = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
     return np.ascontiguousarray(resized, dtype=np.uint8)
@@ -193,7 +193,7 @@ def convert_one(src: Path, *, task: int, instruction: str, decoded_color_order: 
             'camera_front_image': 'RGB uint8 224x224x3 (uncompressed)',
             'decoded_pixel_order_assumed': decoded_color_order.upper(),
             'front_crop_margins_top_bottom_left_right': list(CROP),
-            'resize_interpolation': 'cv2.INTER_AREA',
+            'resize_interpolation': 'cv2.INTER_LINEAR',
             'all_original_frames_preserved': True,
             'action_labels_added': False,
         },
