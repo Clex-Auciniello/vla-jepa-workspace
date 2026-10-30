@@ -1,4 +1,6 @@
-"""Entrypoint: `torchrun --standalone --nproc_per_node=4 -m action_head.train --config ...`."""
+"""Entrypoint: torchrun ... -m action_head.train --config ... --experiment E1."""
+from __future__ import annotations
+
 import argparse
 import json
 import random
@@ -10,7 +12,7 @@ import yaml
 
 from vla_jepa_offline.train import init_distributed
 from .dataset import ActionDataset, collate, prepara_dati
-from .policy import inizializza_policy
+from .policy import inizializza_policy, verifica_heads
 from .processors import crea_processors
 from .trainer import Trainer
 
@@ -18,65 +20,87 @@ from .trainer import Trainer
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
-    parser.add_argument("--stats-only", action="store_true", help="Calcola split e MIN_MAX senza caricare Qwen")
-    parser.add_argument("--smoke", action="store_true", help="Un solo optimizer step su GPU")
+    parser.add_argument("--experiment", choices=("E1", "E2", "E3", "E4"))
+    parser.add_argument("--stats-only", action="store_true")
+    parser.add_argument("--check-heads", action="store_true",
+                        help="Controlla su CPU che le teste iniziali E1-E4 coincidano")
+    parser.add_argument("--smoke", action="store_true")
     args = parser.parse_args()
-    cfg = yaml.safe_load(open(args.config, encoding="utf-8"))
+    with open(args.config, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f)
 
-    # Per --stats-only non servono GPU né NCCL.
+    # Questi due comandi non richiedono GPU.
     if args.stats_only:
-        train, val, stats = prepara_dati(cfg["dataset_root"], cfg["split_manifest"], cfg["seed"])
-        print(json.dumps({"train_episodes": len(train), "val_episodes": len(val), "statistics": stats}, indent=2))
+        train, val, stats = prepara_dati(cfg["dataset_root"], cfg["split_manifest"], cfg["seed"],
+                                         cfg["val_tfrecord"], cfg["val_scripted"])
+        ds = ActionDataset(train)
+        conteggi = ds.conteggi_task()
+        print(json.dumps({"train_episodes": len(train), "val_episodes": len(val),
+                          "frame_originali_per_task": conteggi,
+                          "frame_bilanciati_per_epoca": 12 * max(conteggi.values()),
+                          "optimizer_step_per_epoca": (max(conteggi.values()) + cfg["grad_accum"] - 1)
+                                                        // cfg["grad_accum"],
+                          "action_statistics": stats}, indent=2))
         return
+    if args.check_heads:
+        verifica_heads(cfg["pretrained_paths"])
+        return
+    if not args.experiment:
+        parser.error("Il training richiede --experiment E1/E2/E3/E4")
 
-    rank, local_rank, world_size = init_distributed()  # Riutilizziamo NCCL di E3/E4.
-    if world_size != 4:
-        raise ValueError("La configurazione cluster richiede 4 GPU (torchrun nproc_per_node=4)")
-    random.seed(cfg["seed"] + rank)
-    np.random.seed(cfg["seed"] + rank)
-    torch.manual_seed(cfg["seed"] + rank)
-    torch.cuda.manual_seed(cfg["seed"] + rank)
+    rank, local_rank, world_size = init_distributed()
     try:
-        if rank == 0:
-            dati = prepara_dati(cfg["dataset_root"], cfg["split_manifest"], cfg["seed"])
-        else:
-            dati = None
-        result = [dati]
-        dist.broadcast_object_list(result, src=0)
-        train, val, stats = result[0]
-        if rank == 0:
-            print(f"Episodi training={len(train)} validazione={len(val)}; batch effettivo={4*cfg['batch_size']*cfg['grad_accum']}", flush=True)
+        if world_size != 4:
+            raise ValueError("Il training richiede 4 GPU tramite torchrun")
+        # Scelta sperimentale: seed identico per tutti i rank.
+        random.seed(cfg["seed"])
+        np.random.seed(cfg["seed"])
+        torch.manual_seed(cfg["seed"])
+        torch.cuda.manual_seed(cfg["seed"])
 
-        policy, head_hash = inizializza_policy(cfg, local_rank)
+        dati = (prepara_dati(cfg["dataset_root"], cfg["split_manifest"], cfg["seed"],
+                             cfg["val_tfrecord"], cfg["val_scripted"])
+                if rank == 0 else None)
+        payload = [dati]
+        dist.broadcast_object_list(payload, src=0)
+        train, val, stats = payload[0]
+
+        pretrained_path = cfg["pretrained_paths"][args.experiment]
+        policy, head_hash = inizializza_policy(cfg, pretrained_path, local_rank)
         policy.config.repeated_diffusion_steps = int(cfg["repeated_diffusion_steps"])
         pre, post = crea_processors(policy.config, stats)
-        # Test minimo delle statistiche e del contratto con il controller.
-        campione = collate([ActionDataset(train)[0]])
-        normalizzato = pre(campione)["action"][:, 0, :]
-        recuperato = post(normalizzato).cpu()
-        if not torch.allclose(recuperato, campione["action"][:, 0, :], atol=2e-4, rtol=2e-4):
-            raise RuntimeError("MIN_MAX: normalizzazione e denormalizzazione non inverse")
-        if rank == 0:
-            print("SHA256 action head iniziale:", head_hash, flush=True)
 
-        trainer = Trainer(cfg, policy, pre, post, train, val, stats, head_hash,
-                          rank, local_rank, world_size)
+        # Verifica semplice: MIN_MAX e MIN_MAX inversa devono tornare ai valori iniziali.
+        campione = collate([ActionDataset(train)[0]])
+        recuperato = post(pre(campione)["action"][:, 0, :]).cpu()
+        if not torch.allclose(recuperato, campione["action"][:, 0, :], atol=2e-4, rtol=2e-4):
+            raise ValueError("MIN_MAX: round-trip pre/postprocessor non corretto")
+
+        trainer = Trainer(cfg, args.experiment, policy, pre, post, train, val, stats,
+                          head_hash, rank, local_rank, world_size, smoke=args.smoke)
+        if rank == 0:
+            print(f"Esperimento {args.experiment} | action head iniziale: {head_hash}", flush=True)
         if args.smoke:
             if trainer.step:
-                raise ValueError("Usa un output_root vuoto per lo smoke test")
-            loss = trainer.epoca(0, solo_un_passo=True)
+                raise ValueError("La cartella smoke contiene già un checkpoint")
+            train_loss = trainer.epoca(0, solo_un_passo=True)
+            val_loss = trainer.validazione()
+            trainer.salva(next_epoch=0)
             if rank == 0:
-                print("Smoke forward/backward/optimizer:", loss, flush=True)
-            trainer.salva(next_epoch=0)  # Il checkpoint smoke non è destinato al training reale.
+                print(f"Smoke OK: train_loss={train_loss:.6f}, "
+                      f"val_macro_task_loss={val_loss['macro_task_loss']:.6f}")
             return
 
-        for epoch in range(trainer.epoch_start, cfg["epochs"]):
-            loss_train = trainer.epoca(epoch)
-            loss_val = trainer.validazione()
-            trainer.salva(next_epoch=epoch+1)
+        for epoch in range(trainer.epoch_start, int(cfg["epochs"])):
+            train_loss = trainer.epoca(epoch)
+            val_loss = trainer.validazione()
+            trainer.salva(next_epoch=epoch + 1)
             if rank == 0:
-                report = {"epoch": epoch+1, "step": trainer.step,
-                          "train_loss": loss_train, "val_loss": loss_val}
+                report = {"experiment": args.experiment, "epoch": epoch + 1,
+                          "step": trainer.step, "train_loss": train_loss,
+                          "val_macro_task_loss": val_loss["macro_task_loss"],
+                          "val_frame_weighted_loss": val_loss["frame_weighted_loss"],
+                          "val_by_task": val_loss["by_task"]}
                 with (trainer.root / "metrics.jsonl").open("a") as f:
                     f.write(json.dumps(report) + "\n")
                 print(report, flush=True)

@@ -1,16 +1,22 @@
-# Cambiare i percorsi per E1/E2/E3/E4, mantenendo il resto identico.
-dataset_root: /mnt/beegfs/a.cuciniello9/datasets/robotic/vla_jepa_offline_merged
-pretrained_path: /PATH/TO/E1/pretrained_model
-head_init_path: /PATH/TO/DROID_OR_COMMON_HEAD/pretrained_model
-head_init_seed: 1000
+# Tutti gli esperimenti condividono dataset, split e iperparametri.
+dataset_root: /mnt/beegfs/a.cuciniello9/datasets/robotic/vla_jepa_offline_merged_linear
+split_manifest: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/action_head/shared_split_1plus1.json
 output_root: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/action_head
-# Split comune a tutti gli esperimenti (4 TFRecord + 2 scripted per task in validazione).
-split_manifest: /mnt/beegfs/a.cuciniello9/vla_jepa_action_training/shared_split.json
+
+# Inserire qui i 4 checkpoint ottenuti dal continued WM pretraining.
+# Ogni directory deve contenere config.json e model.safetensors.
+pretrained_paths:
+  E1: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E1/checkpoint_B
+  E2: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E2/checkpoint_B
+  E3: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E3/checkpoint_B
+  E4: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E4/checkpoint_B
+
 seed: 1000
-batch_size: 4        # Per GPU.
-grad_accum: 2        # 4 GPU x 4 x 2 = 32 osservazioni per optimizer step.
+val_tfrecord: 1
+val_scripted: 1             # Validazione: 2 traiettorie per task, una per origine.
+batch_size: 3              # Per GPU: 3 x 4 GPU = 12 task per microbatch globale.
+grad_accum: 2              # Due microbatch = 24 osservazioni, 2 per task/step.
 epochs: 30
-num_workers: 2
 learning_rate: 0.0001
 weight_decay: 1.0e-8
 warmup_steps: 500

@@ -1,4 +1,4 @@
-"""Training DDP e checkpoint A/B, sulla falsariga del trainer offline E3/E4."""
+"""Training della DiT su quattro GPU, con un batch globale bilanciato per task."""
 from __future__ import annotations
 
 import json
@@ -13,8 +13,8 @@ import torch
 import torch.distributed as dist
 from safetensors.torch import load_file
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.utils.data import DataLoader, DistributedSampler, Subset
 
+from vla_jepa_offline.dataset import TRAIN_TASKS
 from vla_jepa_offline.trainer import _rng_state, _restore_rng
 from .dataset import ActionDataset, collate
 from .policy import FlowMatchingLoss
@@ -24,145 +24,192 @@ from .processors import esporta
 def ultimo_checkpoint(root):
     disponibili = []
     for nome in ("checkpoint_A", "checkpoint_B"):
-        folder = Path(root) / nome
-        meta = folder / "metadata.json"
-        if meta.exists():
-            disponibili.append((json.loads(meta.read_text())["sequence"], folder))
-    return max(disponibili)[1] if disponibili else None
+        cartella = Path(root) / nome
+        if (cartella / "metadata.json").is_file():
+            meta = json.loads((cartella / "metadata.json").read_text())
+            disponibili.append((meta["sequence"], cartella))
+    return max(disponibili, default=(0, None))[1]
 
 
 class Trainer:
-    def __init__(self, cfg, policy, pre, post, train, val, stats, init_hash, rank, local_rank, world_size):
+    def __init__(self, cfg, experiment, policy, pre, post, train, val, stats, head_hash,
+                 rank, local_rank, world_size, smoke=False):
         self.cfg, self.rank, self.world_size = cfg, rank, world_size
         self.device = torch.device("cuda", local_rank)
-        self.policy, self.pre, self.post = policy, pre, post
-        self.stats, self.init_hash = stats, init_hash
-        self.root = Path(cfg["output_root"])
+        self.pre, self.post, self.stats, self.init_hash = pre, post, stats, head_hash
+        self.experiment = experiment
+        self.root = Path(cfg["output_root"]) / ("smoke" if smoke else "") / experiment
         self.root.mkdir(parents=True, exist_ok=True)
         self.epoch_start = self.step = self.sequence = 0
 
-        bsz = int(cfg["batch_size"])
-        workers = int(cfg["num_workers"])
-        train_set, val_set = ActionDataset(train), ActionDataset(val)
-        self.sampler = DistributedSampler(train_set, world_size, rank, shuffle=True,
-                                          seed=int(cfg["seed"]), drop_last=True)
-        self.loader = DataLoader(train_set, batch_size=bsz, sampler=self.sampler,
-                                 drop_last=True, num_workers=workers, pin_memory=True,
-                                 persistent_workers=workers > 0, collate_fn=collate)
-        # Evita di duplicare campioni di validazione quando non sono divisibili per 4 GPU.
-        val_indices = range(rank, len(val_set), world_size)
-        self.validation_loader = DataLoader(Subset(val_set, list(val_indices)), batch_size=bsz,
-                                            num_workers=0, collate_fn=collate)
+        self.train_set = ActionDataset(train)
+        self.val_set = ActionDataset(val)
+        self.batch_size = int(cfg["batch_size"])
         self.accum = int(cfg["grad_accum"])
-        self.steps_per_epoch = len(self.loader) // self.accum
-        if self.steps_per_epoch == 0:
-            raise ValueError("Il dataset non consente neppure un optimizer step")
+        if world_size * self.batch_size != len(TRAIN_TASKS):
+            raise ValueError("Per 12 task e 4 GPU occorre batch_size=3 per GPU")
+        if self.accum < 1:
+            raise ValueError("grad_accum deve essere positivo")
+
+        # Ogni riga globale contiene esattamente 12 task; ogni step usa 2 righe.
+        self.max_frame_task = max(self.train_set.conteggi_task().values())
+        self.steps_per_epoch = math.ceil(self.max_frame_task / self.accum)
+        self.global_batch = len(TRAIN_TASKS) * self.accum
 
         self.params = [p for p in policy.parameters() if p.requires_grad]
-        self.optimizer = torch.optim.AdamW(self.params, lr=float(cfg["learning_rate"]),
-            betas=(0.9, 0.95), eps=1e-8, weight_decay=float(cfg["weight_decay"]))
+        self.optimizer = torch.optim.AdamW(
+            self.params, lr=float(cfg["learning_rate"]), betas=(0.9, 0.95),
+            eps=1e-8, weight_decay=float(cfg["weight_decay"]),
+        )
         totale = self.steps_per_epoch * int(cfg["epochs"])
         warm = int(cfg["warmup_steps"])
-        low = float(cfg["min_learning_rate"]) / float(cfg["learning_rate"])
-        def lr_lambda(s):
-            if s < warm:
-                return (s + 1) / max(warm, 1)
-            p = min(1., (s-warm) / max(1, totale-warm))
-            return low + (1-low) * (1+math.cos(math.pi*p)) / 2
+        minimo = float(cfg["min_learning_rate"]) / float(cfg["learning_rate"])
+
+        def lr_lambda(step):
+            if step < warm:
+                return (step + 1) / max(warm, 1)
+            progresso = min(1.0, (step - warm) / max(1, totale - warm))
+            return minimo + (1 - minimo) * (1 + math.cos(math.pi * progresso)) / 2
+
         self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
-
-        self.ddp = DDP(FlowMatchingLoss(policy), device_ids=[local_rank], output_device=local_rank,
-                       broadcast_buffers=False, find_unused_parameters=False)
+        self.ddp = DDP(FlowMatchingLoss(policy), device_ids=[local_rank],
+                       output_device=local_rank, broadcast_buffers=False,
+                       find_unused_parameters=False)
         self.optimizer.zero_grad(set_to_none=True)
-        path = ultimo_checkpoint(self.root)
-        if path is not None:
-            self.resume(path)
+        precedente = ultimo_checkpoint(self.root)
+        if precedente is not None:
+            self.resume(precedente)
 
-    def _batch(self, raw):
-        # Normalizzazione ACTION MIN_MAX ed estrazione delle feature tramite LeRobot.
-        return self.pre(raw)
+        if rank == 0:
+            n = sum(p.numel() for p in self.params)
+            print(f"{experiment}: parametri addestrabili={n:,} | "
+                  f"frame originali={len(self.train_set)} | "
+                  f"frame bilanciati/epoca={12 * self.max_frame_task} | "
+                  f"step/epoca={self.steps_per_epoch}", flush=True)
+            print(f"Frame per task prima dell'oversampling: "
+                  f"{self.train_set.conteggi_task()}", flush=True)
 
-    def _optimizer_step(self, iterator):
-        somma = 0.
-        for micro in range(self.accum):
-            batch = self._batch(next(iterator))
-            ctx = nullcontext() if micro == self.accum-1 else self.ddp.no_sync()
-            with ctx:
-                loss = self.ddp(batch)
-                (loss / self.accum).backward()
-            somma += float(loss.detach()) / self.accum
-        torch.nn.utils.clip_grad_norm_(self.params, float(self.cfg["grad_clip_norm"]), error_if_nonfinite=True)
+    def _batch(self, indices, dataset):
+        return self.pre(collate([dataset[i] for i in indices]))
+
+    def _optimizer_step(self, gruppo):
+        """Da 12 a 24 campioni: ciascuna GPU riceve sempre 3 per microbatch."""
+        micro_globali = len(TRAIN_TASKS)
+        num_micro = len(gruppo) // micro_globali
+        somma_locale = 0.0
+        for micro in range(num_micro):
+            inizio = micro * micro_globali + self.rank * self.batch_size
+            indici = gruppo[inizio:inizio + self.batch_size]
+            contesto = nullcontext() if micro == num_micro - 1 else self.ddp.no_sync()
+            with contesto:
+                loss_per_campione = self.ddp(self._batch(indici, self.train_set))
+                somma = loss_per_campione.sum()
+                # DDP media sui rank; la loss finale è la media dei campioni globali.
+                (somma * (self.world_size / len(gruppo))).backward()
+            somma_locale += float(somma.detach())
+
+        torch.nn.utils.clip_grad_norm_(self.params, float(self.cfg["grad_clip_norm"]),
+                                       error_if_nonfinite=True)
         self.optimizer.step()
         self.scheduler.step()
         self.optimizer.zero_grad(set_to_none=True)
         self.step += 1
-        return somma
+        return somma_locale
 
     def epoca(self, epoch, solo_un_passo=False):
-        self.sampler.set_epoch(epoch)
-        self.ddp.train()  # FlowMatchingLoss rimette Qwen in eval().
-        it = iter(self.loader)
-        losses = []
-        for _ in range(1 if solo_un_passo else self.steps_per_epoch):
-            losses.append(self._optimizer_step(it))
+        self.ddp.train()
+        # Stesso ordinamento globale su tutti i rank, ma sottobatch diversi.
+        ordine = self.train_set.epoch_indices(int(self.cfg["seed"]), epoch)
+        totale_locale = 0.0
+        for inizio in range(0, len(ordine), self.global_batch):
+            gruppo = ordine[inizio:inizio + self.global_batch]
+            totale_locale += self._optimizer_step(gruppo)
             if self.rank == 0 and self.step % int(self.cfg["log_every"]) == 0:
-                print(f"step={self.step} loss={losses[-1]:.5f} lr={self.optimizer.param_groups[0]['lr']:.3g}", flush=True)
-        result = torch.tensor([sum(losses), len(losses)], dtype=torch.float64, device=self.device)
-        dist.all_reduce(result)
-        return float(result[0] / result[1])
+                print(f"epoca={epoch+1} step={self.step} "
+                      f"lr={self.optimizer.param_groups[0]['lr']:.3g}", flush=True)
+            if solo_un_passo:
+                break
+        n = min(self.global_batch, len(ordine)) if solo_un_passo else len(ordine)
+        totale = torch.tensor([totale_locale], dtype=torch.float64, device=self.device)
+        dist.all_reduce(totale)
+        return float(totale.item() / n)
 
     @torch.no_grad()
     def validazione(self):
+        """Nessun oversampling; media globale e macro-media dei 12 task."""
         self.ddp.eval()
-        somma, n = 0., 0
-        for raw in self.validation_loader:
-            loss = self.ddp.module(self._batch(raw))
-            b = len(raw["task"])
-            somma += float(loss) * b
-            n += b
-        valori = torch.tensor([somma, n], dtype=torch.float64, device=self.device)
-        dist.all_reduce(valori)
-        return float(valori[0] / valori[1])
+        somme = torch.zeros(len(TRAIN_TASKS), dtype=torch.float64, device=self.device)
+        conteggi = torch.zeros(len(TRAIN_TASKS), dtype=torch.float64, device=self.device)
+        task_to_pos = {task: i for i, task in enumerate(TRAIN_TASKS)}
+
+        # Il rumore della validazione è riproducibile e non cambia l'RNG del train.
+        with torch.random.fork_rng(devices=[self.device.index]):
+            torch.manual_seed(int(self.cfg["seed"]))
+            torch.cuda.manual_seed(int(self.cfg["seed"]))
+            for base in range(self.rank * self.batch_size,
+                              len(self.val_set), self.world_size * self.batch_size):
+                indici = list(range(base, min(base + self.batch_size, len(self.val_set))))
+                if not indici:
+                    continue
+                loss = self.ddp.module(self._batch(indici, self.val_set))
+                for pos, indice in enumerate(indici):
+                    episodio, _ = self.val_set.indici[indice]
+                    task = self.val_set.episodes[episodio].task_id
+                    j = task_to_pos[task]
+                    somme[j] += loss[pos].double()
+                    conteggi[j] += 1
+
+        dist.all_reduce(somme)
+        dist.all_reduce(conteggi)
+        medie = somme / conteggi.clamp_min(1)
+        by_task = {f"{task:02d}": float(medie[i]) for i, task in enumerate(TRAIN_TASKS)}
+        return {
+            "macro_task_loss": float(medie.mean()),
+            "frame_weighted_loss": float(somme.sum() / conteggi.sum()),
+            "by_task": by_task,
+        }
 
     def salva(self, next_epoch):
-        # Come E3/E4, salviamo gli RNG di TUTTI i rank.
         rng = [None] * self.world_size
         dist.all_gather_object(rng, _rng_state())
         dist.barrier()
         if self.rank == 0:
             sequence = self.sequence + 1
             destinazione = self.root / ("checkpoint_A" if sequence % 2 else "checkpoint_B")
-            tmp = Path(tempfile.mkdtemp(dir=self.root, prefix=".incomplete_"))
+            temporanea = Path(tempfile.mkdtemp(dir=self.root, prefix=".incomplete_"))
             try:
-                esporta(self.ddp.module.policy, self.pre, self.post, tmp / "pretrained_model")
+                esporta(self.ddp.module.policy, self.pre, self.post,
+                        temporanea / "pretrained_model")
                 torch.save({"optimizer": self.optimizer.state_dict(),
                             "scheduler": self.scheduler.state_dict(), "rng": rng},
-                           tmp / "trainer_state.pt")
+                           temporanea / "trainer_state.pt")
                 meta = {"sequence": sequence, "next_epoch": next_epoch, "step": self.step,
                         "fingerprint": self.stats["fingerprint"], "head_hash": self.init_hash,
-                        "config": self.cfg, "world_size": self.world_size}
-                (tmp / "metadata.json").write_text(json.dumps(meta, indent=2))
+                        "experiment": self.experiment, "config": self.cfg,
+                        "world_size": self.world_size}
+                (temporanea / "metadata.json").write_text(json.dumps(meta, indent=2))
                 if destinazione.exists():
                     shutil.rmtree(destinazione)
-                os.replace(tmp, destinazione)
+                os.replace(temporanea, destinazione)
                 self.sequence = sequence
             finally:
-                if tmp.exists():
-                    shutil.rmtree(tmp)
+                if temporanea.exists():
+                    shutil.rmtree(temporanea)
         dist.barrier()
 
     def resume(self, checkpoint):
         meta = json.loads((checkpoint / "metadata.json").read_text())
-        if (meta["fingerprint"] != self.stats["fingerprint"] or meta["head_hash"] != self.init_hash
-            or meta["config"] != self.cfg or meta["world_size"] != self.world_size):
-            raise ValueError("Resume incompatibile con dati, configurazione o inizializzazione")
-        state = load_file(checkpoint / "pretrained_model/model.safetensors", device="cpu")
-        self.ddp.module.policy.load_state_dict(state, strict=True)
-        del state
+        if (meta["fingerprint"] != self.stats["fingerprint"] or
+            meta["head_hash"] != self.init_hash or meta["config"] != self.cfg or
+            meta["experiment"] != self.experiment or meta["world_size"] != self.world_size):
+            raise ValueError("Resume non coerente con dati o configurazione")
+        pesi = load_file(checkpoint / "pretrained_model/model.safetensors", device="cpu")
+        self.ddp.module.policy.load_state_dict(pesi, strict=True)
         training = torch.load(checkpoint / "trainer_state.pt", map_location="cpu", weights_only=True)
         self.optimizer.load_state_dict(training["optimizer"])
         self.scheduler.load_state_dict(training["scheduler"])
         _restore_rng(training["rng"][self.rank])
         self.epoch_start, self.step, self.sequence = meta["next_epoch"], meta["step"], meta["sequence"]
         if self.rank == 0:
-            print(f"Resume: epoca {self.epoch_start}, optimizer step {self.step}", flush=True)
+            print(f"Resume {self.experiment}: epoca {self.epoch_start}, "
+                  f"step {self.step}", flush=True)
