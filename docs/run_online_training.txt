@@ -176,7 +176,8 @@ set -o pipefail
   2>&1 | tee -a logs/plays_server.log
 
 
-# Sesto terminale
+# Sesto terminale - EXPLORATION client
+
 docker exec -it ur_robotiq_teleoperation_container bash
 
 cd /home/ros2_ws
@@ -189,12 +190,7 @@ python3 -u -m vla_jepa_online.exploration.exploration_client \
   --state /opt/vla_jepa_train/outputs/exploration_state.json
 
 
-
-
-
-
-
-# Settimo terminale client play
+# Settimo terminale - PLAY client 
 docker exec -it ur_robotiq_teleoperation_container bash
 
 cd /home/ros2_ws

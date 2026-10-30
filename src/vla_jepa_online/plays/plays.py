@@ -110,23 +110,53 @@ def _in_place(req: PlayRequest) -> bool:
     dx, dy = req.place_xyz[0] - ox, req.place_xyz[1] - oy
     return math.hypot(dx, dy) < 1e-8
 
-
 def _direction(req: PlayRequest) -> str:
-    """Direzione effettiva del trasporto TCP sul tavolo, in base_link.
+    """Determina la direzione del movimento in base_link.
 
-    Usa il punto di presa dopo l'offset storico; così il verso descritto
-    coincide con lo spostamento comandato. Per le rilocazioni è ammesso in place.
+    Direzioni cardinali:
+        dx < 0 -> right
+        dx > 0 -> left
+        dy > 0 -> forward
+        dy < 0 -> backward
+
+    Direzioni diagonali:
+        forward-left
+        forward-right
+        backward-left
+        backward-right
+
+    La classificazione utilizza 8 settori angolari da 45 gradi.
     """
+
     if _in_place(req):
         return "in place"
+
     ox, oy, _ = _object_xyz(req)
-    dx, dy = req.place_xyz[0] - ox, req.place_xyz[1] - oy
+
+    dx = req.place_xyz[0] - ox
+    dy = req.place_xyz[1] - oy
+
     if abs(dx) < 1e-8 and abs(dy) < 1e-8:
         return "in place"
+
+    # Soglia angolare per distinguere direzioni cardinali e diagonali.
+    diagonal_ratio = math.tan(math.pi / 8)  # circa 0.4142
+
+    # Movimento diagonale:
+    # entrambe le componenti devono essere sufficientemente rilevanti.
+    if min(abs(dx), abs(dy)) >= diagonal_ratio * max(abs(dx), abs(dy)):
+
+        horizontal = "to the right" if dx < 0 else "to the left"
+        vertical = "forward" if dy > 0 else "backward"
+
+        return f"{vertical} and {horizontal}"
+
+    # Movimento prevalentemente orizzontale.
     if abs(dx) >= abs(dy):
         return "to the right" if dx < 0 else "to the left"
-    return "forward" if dy > 0 else "backward"
 
+    # Movimento prevalentemente verticale.
+    return "forward" if dy > 0 else "backward"
 
 def _relocation_instruction(req: PlayRequest) -> str:
     if _in_place(req):

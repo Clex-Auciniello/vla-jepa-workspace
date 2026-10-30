@@ -9,7 +9,7 @@ plays:
   preview_sync_slop_s: 0.08
   preview_timeout_s: 10.0
   # Offsets e pose ripresi da script_controller_node.py.
-  pick_y_offset_m: -0.06
+  pick_y_offset_m: -0.04
   move_to_initial_pose: true
   pose_before_first_inference: [-0.15552094619366708, 0.34869994018501943, 0.1532803451753288, 0.9994452044624775, 0.03161651380119412, 0.0021438049655468088, 0.010251021036213035]
   # L'osservazione finale è reale, NON una ripetizione artificiale.
@@ -18,7 +18,7 @@ plays:
   save_path: /opt/vla_jepa_train/data/plays_trajectories
   # Imporre durante i test il posizionamento libero degli oggetti e nessun intralcio.
   allow_experimental_execution: true
-  pick_x_offset_m: 0.03
+  pick_x_offset_m: 0.02
 
 primitives:
   min_step_m: 0.02
