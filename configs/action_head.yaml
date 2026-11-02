@@ -6,10 +6,10 @@ output_root: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/a
 # Inserire qui i 4 checkpoint ottenuti dal continued WM pretraining.
 # Ogni directory deve contenere config.json e model.safetensors.
 pretrained_paths:
-  E1: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E1/checkpoint_B
+  E1: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E1/checkpoint_A
   E2: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E2/checkpoint_B
-  E3: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E3/checkpoint_B
-  E4: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E4/checkpoint_B
+  E3: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E3/checkpoint_A
+  E4: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E4/checkpoint_A
 
 seed: 1000
 val_tfrecord: 1

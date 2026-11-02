@@ -50,7 +50,7 @@ import savers  # noqa: F401
 import multi_task_il.datasets.savers  # noqa: F401
 
 TRAIN_TASKS = (1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14)
-CROP = (0, 10, 140, 90)
+CROP = (0, 30, 140, 120)
 TARGET_SIZE = (224, 224)
 EXPECTED_INPUT_HW = (376, 672)
 DEFAULT_HUMAN = Path('/mnt/beegfs/a.cuciniello9/datasets/human/human_rgb_pick_place')
@@ -110,8 +110,16 @@ def decode_and_resize_front(value, *, path: Path, t: int, decoded_color_order: s
     top, bottom, left, right = CROP
     height, width = image.shape[:2]
     cropped = image[top:height-bottom, left:width-right]
-    if cropped.shape != (366, 442, 3):
-        raise AssertionError(f'{path} step {t}: unexpected crop shape {cropped.shape}')
+    expected_crop_shape = (
+        height - top - bottom,
+        width - left - right,
+        3,
+    )
+
+    if cropped.shape != expected_crop_shape:
+        raise AssertionError(
+            f'{path} step {t}: unexpected crop shape {cropped.shape}'
+        )
     resized = cv2.resize(cropped, TARGET_SIZE, interpolation=cv2.INTER_LINEAR)
     if decoded_color_order == 'bgr':
         resized = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)

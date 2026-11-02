@@ -1,0 +1,17 @@
+# E1: exploration offline; frame e prompt già preprocessati nei PKL.
+dataset_kind: exploration
+dataset_root: /mnt/beegfs/a.cuciniello9/datasets/robotic/exploration_preprocessed
+pretrained_path: checkpoints/base
+checkpoint_root: checkpoints/E1
+
+camera_count: 2
+epochs: 500
+window_size: 8
+stride: 5
+batch_size: 4                 # Finestre per GPU
+gradient_accumulation_steps: 2
+
+qwen_learning_rate: 1.0e-5
+predictor_learning_rate: 1.0e-5
+grad_clip_norm: 1.0
+seed: 1000

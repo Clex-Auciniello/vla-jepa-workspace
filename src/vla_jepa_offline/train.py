@@ -1,7 +1,7 @@
-"""Entrypoint comune per il continued pretraining offline E3 ed E4.
+"""Entrypoint comune per il continued pretraining offline E1, E3 ed E4.
 
 Esecuzione su quattro A100: torchrun --standalone --nproc_per_node=4
-    -m vla_jepa_offline.train --config configs/offline/real_robot.yaml
+    -m vla_jepa_offline.train --config configs/real_robot.yaml
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ import torch
 import torch.distributed as dist
 import yaml
 
-from .dataset import OfflineWindowDataset, build_catalog
+from .dataset import OfflineWindowDataset, build_catalog, build_exploration_catalog
 from .trainer import OfflineTrainer
 
 
@@ -38,11 +38,17 @@ def dataset_identity(catalog, cfg: dict) -> str:
         stat = Path(episode.path).stat()
         digest.update(f"{episode.path}|{stat.st_size}|{stat.st_mtime_ns}|"
                       f"{episode.task_id}|{episode.frames}|{episode.task}\n".encode())
+        if episode.window_prompts is not None:
+            # E1: il resume deve riconoscere anche i prompt e gli start delle finestre.
+            digest.update(json.dumps(episode.window_prompts, ensure_ascii=False).encode())
     settings = {key: cfg[key] for key in (
         "pretrained_path", "camera_count", "window_size", "stride", "seed",
         "batch_size", "gradient_accumulation_steps", "qwen_learning_rate",
         "predictor_learning_rate", "grad_clip_norm")}
     digest.update(json.dumps(settings, sort_keys=True).encode())
+    if cfg.get("dataset_kind", "pick_place") == "exploration":
+        # Non cambiare l'impronta storica di E3/E4: i loro resume restano validi.
+        digest.update(b"dataset_kind=exploration;window_prompts=v1")
     return digest.hexdigest()
 
 
@@ -59,14 +65,26 @@ def main() -> None:
         if int(cfg["batch_size"]) != 4 or int(cfg["gradient_accumulation_steps"]) != 2:
             raise ValueError("Ricetta fissata: batch_size=4 per GPU e accumulation=2")
         if int(cfg["camera_count"]) not in (1, 2):
-            raise ValueError("camera_count deve essere 1 per E3 oppure 2 per E4")
+            raise ValueError("camera_count deve essere 1 oppure 2")
+        dataset_kind = cfg.get("dataset_kind", "pick_place")
+        if dataset_kind not in ("pick_place", "exploration"):
+            raise ValueError(f"dataset_kind non supportato: {dataset_kind}")
+        if dataset_kind == "exploration" and int(cfg["camera_count"]) != 2:
+            raise ValueError("E1 richiede due camere: frontale e gripper")
         if not args.preflight_only and world_size != 4:
             raise ValueError("Questo esperimento richiede torchrun con quattro processi GPU")
         if int(cfg["window_size"]) != 8 or int(cfg["stride"]) != 5:
             raise ValueError("Ricetta fissata: finestre di 8 frame con stride 5")
 
         # Il rank 0 apre i PKL una sola volta per ottenere lunghezze e prompt.
-        catalog = build_catalog(cfg["dataset_root"]) if rank == 0 else None
+        if rank == 0:
+            if dataset_kind == "exploration":
+                catalog = build_exploration_catalog(
+                    cfg["dataset_root"], cfg["window_size"], cfg["stride"])
+            else:
+                catalog = build_catalog(cfg["dataset_root"])
+        else:
+            catalog = None
         if world_size > 1:
             result = [catalog]
             dist.broadcast_object_list(result, src=0)

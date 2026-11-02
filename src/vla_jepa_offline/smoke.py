@@ -16,13 +16,20 @@ import torch
 import torch.distributed as dist
 import yaml
 
-from .dataset import EpisodeSpec, OfflineWindowDataset, TRAIN_TASKS, _open_episode
+from .dataset import (EpisodeSpec, OfflineWindowDataset, TRAIN_TASKS,
+                      _open_episode, build_exploration_catalog)
 from .train import dataset_identity, init_distributed
 from .trainer import OfflineTrainer, latest_checkpoint
 
 
-def small_catalog(dataset_root: str, *, windows: int, window_size: int, stride: int):
-    """Legge solo i primi episodi necessari a ottenere il numero di finestre richiesto."""
+def small_catalog(dataset_root: str, *, windows: int, window_size: int, stride: int,
+                  dataset_kind: str = "pick_place"):
+    """Legge solo gli episodi necessari allo smoke test."""
+    if dataset_kind == "exploration":
+        return build_exploration_catalog(dataset_root, window_size, stride,
+                                         max_windows=windows)
+    if dataset_kind != "pick_place":
+        raise ValueError(f"dataset_kind non supportato: {dataset_kind}")
     root = Path(dataset_root).expanduser().resolve()
     catalog: list[EpisodeSpec] = []
     count = 0
@@ -64,7 +71,7 @@ def main() -> None:
     rank, local_rank, world_size = init_distributed()
 
     try:
-        if world_size != 4:
+        if world_size != 2:
             raise RuntimeError(f"Smoke test previsto per 4 rank, ottenuti {world_size}")
         if int(cfg["batch_size"]) != 4 or int(cfg["gradient_accumulation_steps"]) != 2:
             raise RuntimeError("Configurazione attesa: batch_size=4, gradient_accumulation_steps=2")
@@ -74,7 +81,8 @@ def main() -> None:
             if not source.is_dir() or not (source / "config.json").is_file():
                 raise FileNotFoundError(f"Checkpoint base non trovato: {source}")
             catalog = small_catalog(cfg["dataset_root"], windows=args.windows,
-                                    window_size=int(cfg["window_size"]), stride=int(cfg["stride"]))
+                                    window_size=int(cfg["window_size"]), stride=int(cfg["stride"]),
+                                    dataset_kind=cfg.get("dataset_kind", "pick_place"))
             print(f"[SMOKE] Esperimento: {args.config.name}, modalità: {args.mode}", flush=True)
             print(f"[SMOKE] Checkpoint base: {source}", flush=True)
             print(f"[SMOKE] PKL selezionati: {len(catalog)}; finestre richieste: {args.windows}", flush=True)
