@@ -204,4 +204,4 @@ python3 -u -m vla_jepa_online.plays.client_plays \
   --allow-experimental
 
 Default — Esecuzione training online
-python3 -u -m vla_jepa_online.plays.client_plays --upload --ack-updated-batch-builder
+python3 -u -m vla_jepa_online.plays.client_plays --upload --ack-updated-batch-builder --allow-experimental

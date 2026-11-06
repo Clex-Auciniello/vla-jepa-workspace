@@ -24,7 +24,7 @@ primitives:
   min_step_m: 0.02
   reach_hover_height_m: 0.08
   approach_z_offset_m: 0.0
-  release_height_offset_m: 0.02
+  release_height_offset_m: 0.03
   lift_height_m: 0.15
   rotation_deg: 30.0
   grasp_quaternion_xyzw: [0.9994452044624775, 0.03161651380119412, 0.0021438049655468088, 0.010251021036213035]
