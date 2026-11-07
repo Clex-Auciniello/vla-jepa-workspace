@@ -1,5 +1,5 @@
 # Tutti gli esperimenti condividono dataset, split e iperparametri.
-dataset_root: /mnt/beegfs/a.cuciniello9/datasets/robotic/vla_jepa_offline_merged_linear
+dataset_root: /mnt/beegfs/a.cuciniello9/datasets/robotic/vla_jepa_offline_merged
 split_manifest: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/action_head/shared_split_1plus1.json
 output_root: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/action_head
 

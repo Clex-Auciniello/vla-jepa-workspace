@@ -1,0 +1,28 @@
+
+# E2: World Model continued pretraining su traiettorie Plays.
+# Immagini già preprocessate RGB 224x224, prompt unico per episodio.
+# Finestre 8 frame, stride 5, ultima finestra allineata.
+
+dataset_kind: plays
+dataset_root: /mnt/beegfs/a.cuciniello9/datasets/robotic/plays_preprocessed
+
+# Stesso punto di partenza degli altri esperimenti.
+pretrained_path: checkpoints/base
+checkpoint_root: checkpoints/E2
+
+# Dati
+camera_count: 2
+epochs: 500
+window_size: 8
+stride: 5
+
+# DDP: 4 GPU x batch 4 x accumulo 2 = 32 finestre
+batch_size: 4
+gradient_accumulation_steps: 2
+
+# Ottimizzazione
+qwen_learning_rate: 1.0e-5
+predictor_learning_rate: 1.0e-5
+grad_clip_norm: 1.0
+
+seed: 1000

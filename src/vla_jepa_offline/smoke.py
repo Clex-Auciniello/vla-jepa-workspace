@@ -28,6 +28,36 @@ def small_catalog(dataset_root: str, *, windows: int, window_size: int, stride: 
     if dataset_kind == "exploration":
         return build_exploration_catalog(dataset_root, window_size, stride,
                                          max_windows=windows)
+    
+    if dataset_kind == "plays":
+        root = Path(dataset_root).expanduser().resolve()
+        catalog = []
+        count = 0
+
+        for path in sorted(root.glob("P*.pkl")):
+            data = _open_episode(str(path))
+            frames = len(data["traj"])
+
+            n_windows = len(range(
+                0, frames - window_size + 1, stride
+            ))
+
+            if n_windows == 0:
+                continue
+
+            catalog.append(EpisodeSpec(
+                path=str(path),
+                task_id=None,
+                task=data["episode_prompt"],
+                frames=frames,
+            ))
+
+            count += n_windows
+
+            if count >= windows:
+                return catalog
+
+        raise ValueError("Finestre Plays insufficienti")
     if dataset_kind != "pick_place":
         raise ValueError(f"dataset_kind non supportato: {dataset_kind}")
     root = Path(dataset_root).expanduser().resolve()
@@ -94,7 +124,13 @@ def main() -> None:
         dist.broadcast_object_list(payload, src=0)
         catalog = payload[0]
 
-        dataset = OfflineWindowDataset(catalog, cfg["window_size"], cfg["stride"], cfg["camera_count"])
+        dataset = OfflineWindowDataset(
+            catalog,
+            cfg["window_size"],
+            cfg["stride"],
+            cfg["camera_count"],
+            align_last_window=(cfg["dataset_kind"] == "plays"),
+        )
         identity = dataset_identity(catalog, cfg)
         order = dataset.epoch_indices(int(cfg["seed"]), 0)[:args.windows]
 

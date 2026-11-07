@@ -17,7 +17,12 @@ import torch
 import torch.distributed as dist
 import yaml
 
-from .dataset import OfflineWindowDataset, build_catalog, build_exploration_catalog
+from .dataset import (
+    OfflineWindowDataset,
+    build_catalog,
+    build_exploration_catalog,
+    build_plays_catalog,
+)
 from .trainer import OfflineTrainer
 
 
@@ -49,6 +54,10 @@ def dataset_identity(catalog, cfg: dict) -> str:
     if cfg.get("dataset_kind", "pick_place") == "exploration":
         # Non cambiare l'impronta storica di E3/E4: i loro resume restano validi.
         digest.update(b"dataset_kind=exploration;window_prompts=v1")
+
+    elif cfg.get("dataset_kind", "pick_place") == "plays":
+        digest.update(b"dataset_kind=plays;align_last_window=true;episode_prompt=v1")
+        
     return digest.hexdigest()
 
 
@@ -67,10 +76,10 @@ def main() -> None:
         if int(cfg["camera_count"]) not in (1, 2):
             raise ValueError("camera_count deve essere 1 oppure 2")
         dataset_kind = cfg.get("dataset_kind", "pick_place")
-        if dataset_kind not in ("pick_place", "exploration"):
+        if dataset_kind not in ("pick_place", "exploration",  "plays"):
             raise ValueError(f"dataset_kind non supportato: {dataset_kind}")
-        if dataset_kind == "exploration" and int(cfg["camera_count"]) != 2:
-            raise ValueError("E1 richiede due camere: frontale e gripper")
+        if dataset_kind in ("exploration", "plays") and int(cfg["camera_count"]) != 2:
+            raise ValueError("E1/E2 richiede due camere: frontale e gripper")
         if not args.preflight_only and world_size != 4:
             raise ValueError("Questo esperimento richiede torchrun con quattro processi GPU")
         if int(cfg["window_size"]) != 8 or int(cfg["stride"]) != 5:
@@ -81,6 +90,12 @@ def main() -> None:
             if dataset_kind == "exploration":
                 catalog = build_exploration_catalog(
                     cfg["dataset_root"], cfg["window_size"], cfg["stride"])
+
+            elif dataset_kind == "plays":
+                catalog = build_plays_catalog( 
+                    cfg["dataset_root"]
+                )
+
             else:
                 catalog = build_catalog(cfg["dataset_root"])
         else:
@@ -89,8 +104,15 @@ def main() -> None:
             result = [catalog]
             dist.broadcast_object_list(result, src=0)
             catalog = result[0]
+
         dataset = OfflineWindowDataset(
-            catalog, cfg["window_size"], cfg["stride"], cfg["camera_count"])
+            catalog,
+            cfg["window_size"],
+            cfg["stride"],
+            cfg["camera_count"],
+            align_last_window=(dataset_kind == "plays"),
+        )
+
         identity = dataset_identity(catalog, cfg)
 
         if rank == 0:
@@ -102,11 +124,11 @@ def main() -> None:
         if args.preflight_only:
             return
 
-        # Seed iniziale distinto per GPU; l'ordine delle finestre è comune.
-        random.seed(cfg["seed"] + rank)
-        np.random.seed(cfg["seed"] + rank)
-        torch.manual_seed(cfg["seed"] + rank)
-        torch.cuda.manual_seed(cfg["seed"] + rank)
+        # Seed iniziale uguale per GPU; l'ordine delle finestre è comune.
+        random.seed(cfg["seed"])
+        np.random.seed(cfg["seed"])
+        torch.manual_seed(cfg["seed"])
+        torch.cuda.manual_seed(cfg["seed"])
         trainer = OfflineTrainer(cfg, rank=rank, local_rank=local_rank,
                                  world_size=world_size, dataset_identity=identity)
 

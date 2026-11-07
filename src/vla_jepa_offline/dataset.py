@@ -127,12 +127,45 @@ def build_exploration_catalog(
             break
     return catalog
 
+def build_plays_catalog(dataset_root: str | Path) -> list[EpisodeSpec]:
+    """Catalogo E2: un prompt per episodio Plays."""
+    root = Path(dataset_root).expanduser().resolve()
+
+    paths = sorted(
+        (p for p in root.glob("P*.pkl") if re.fullmatch(r"P\d{5,}", p.stem)),
+        key=lambda p: int(p.stem[1:]),
+    )
+
+    if not paths:
+        raise FileNotFoundError(f"Nessun PKL Plays in {root}")
+
+    catalog = []
+
+    for path in paths:
+        data = _open_episode(str(path))
+
+        catalog.append(
+            EpisodeSpec(
+                path=str(path),
+                task_id=None,
+                task=data["episode_prompt"],
+                frames=len(data["traj"]),
+            )
+        )
+
+    return catalog
 
 class OfflineWindowDataset(torch.utils.data.Dataset):
     """Indice delle finestre con caricamento differito delle traiettorie."""
 
-    def __init__(self, catalog: list[EpisodeSpec], window_size: int = 8, stride: int = 5,
-                 camera_count: int = 2):
+    def __init__(
+        self,
+        catalog: list[EpisodeSpec],
+        window_size: int = 8,
+        stride: int = 5,
+        camera_count: int = 2,
+        align_last_window: bool = False,
+    ):
         self.catalog = catalog
         self.window_size = window_size
         self.camera_count = camera_count
@@ -142,9 +175,20 @@ class OfflineWindowDataset(torch.utils.data.Dataset):
         for episode_idx, spec in enumerate(catalog):
             indices = []
             if spec.window_prompts is None:
-                # E3/E4: stesso prompt per tutte le finestre di una traiettoria.
-                windows = ((start, spec.task) for start in range(
-                    0, spec.frames - window_size + 1, stride))
+                # E2/E3/E4: prompt unico per episodio.
+                starts = list(range(
+                    0, spec.frames - window_size + 1, stride
+                ))
+
+                # Solo E2: sposta l'ultima finestra sugli ultimi frame.
+                if (
+                    align_last_window
+                    and starts
+                    and starts[-1] + window_size < spec.frames
+                ):
+                    starts[-1] = spec.frames - window_size
+
+                windows = ((start, spec.task) for start in starts)
             else:
                 # E1: indici e prompt già salvati, incluso l'eventuale allineamento finale.
                 windows = iter(spec.window_prompts)
