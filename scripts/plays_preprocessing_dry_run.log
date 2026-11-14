@@ -1,0 +1,142 @@
+Piano: originali=190, esclusi static=48, jump=4, selezionati=138 | mode=dry-run, threshold=0.20, legacy_pixels=True, output=/mnt/beegfs/a.cuciniello9/datasets/mixture/plays_preprocessed_actions
+Exception raised during import
+Exception raised during import
+[  1/138] P00001.pkl: task=02 frame=41, windows=7, EEF max delta=31.042686mm gripper final closed=0 legacy match=True
+[  2/138] P00002.pkl: task=02 frame=36, windows=6, EEF max delta=31.219526mm gripper final closed=0 legacy match=True
+[  3/138] P00003.pkl: task=02 frame=35, windows=6, EEF max delta=33.744856mm gripper final closed=0 legacy match=True
+[  4/138] P00004.pkl: task=02 frame=33, windows=6, EEF max delta=34.496863mm gripper final closed=0 legacy match=True
+[  5/138] P00006.pkl: task=02 frame=35, windows=6, EEF max delta=35.579748mm gripper final closed=0 legacy match=True
+[  6/138] P00007.pkl: task=02 frame=41, windows=7, EEF max delta=35.246961mm gripper final closed=0 legacy match=True
+[  7/138] P00008.pkl: task=02 frame=30, windows=5, EEF max delta=35.31038mm gripper final closed=0 legacy match=True
+[  8/138] P00009.pkl: task=02 frame=36, windows=6, EEF max delta=29.932136mm gripper final closed=0 legacy match=True
+[  9/138] P00010.pkl: task=02 frame=42, windows=7, EEF max delta=38.621098mm gripper final closed=0 legacy match=True
+[ 10/138] P00011.pkl: task=02 frame=49, windows=9, EEF max delta=30.496392mm gripper final closed=0 legacy match=True
+[ 11/138] P00012.pkl: task=02 frame=43, windows=8, EEF max delta=40.312277mm gripper final closed=0 legacy match=True
+[ 12/138] P00013.pkl: task=02 frame=49, windows=9, EEF max delta=34.648392mm gripper final closed=0 legacy match=True
+[ 13/138] P00014.pkl: task=02 frame=40, windows=7, EEF max delta=37.366144mm gripper final closed=0 legacy match=True
+[ 14/138] P00015.pkl: task=02 frame=37, windows=6, EEF max delta=33.040332mm gripper final closed=0 legacy match=True
+[ 15/138] P00016.pkl: task=02 frame=38, windows=7, EEF max delta=40.25294mm gripper final closed=0 legacy match=True
+[ 16/138] P00017.pkl: task=02 frame=34, windows=6, EEF max delta=38.067858mm gripper final closed=0 legacy match=True
+[ 17/138] P00018.pkl: task=02 frame=33, windows=6, EEF max delta=28.11368mm gripper final closed=0 legacy match=True
+[ 18/138] P00019.pkl: task=02 frame=38, windows=7, EEF max delta=31.07251mm gripper final closed=0 legacy match=True
+[ 19/138] P00020.pkl: task=02 frame=50, windows=9, EEF max delta=35.942258mm gripper final closed=0 legacy match=True
+[ 20/138] P00021.pkl: task=02 frame=43, windows=8, EEF max delta=31.514783mm gripper final closed=0 legacy match=True
+[ 21/138] P00022.pkl: task=02 frame=51, windows=9, EEF max delta=31.900049mm gripper final closed=0 legacy match=True
+[ 22/138] P00023.pkl: task=02 frame=52, windows=9, EEF max delta=30.86957mm gripper final closed=0 legacy match=True
+[ 23/138] P00024.pkl: task=02 frame=33, windows=6, EEF max delta=28.552858mm gripper final closed=0 legacy match=True
+[ 24/138] P00025.pkl: task=02 frame=39, windows=7, EEF max delta=46.766608mm gripper final closed=0 legacy match=True
+[ 25/138] P00026.pkl: task=02 frame=32, windows=5, EEF max delta=81.607306mm gripper final closed=0 legacy match=True
+[ 26/138] P00031.pkl: task=02 frame=48, windows=9, EEF max delta=37.561316mm gripper final closed=0 legacy match=True
+[ 27/138] P00032.pkl: task=02 frame=38, windows=7, EEF max delta=32.84324mm gripper final closed=0 legacy match=True
+[ 28/138] P00033.pkl: task=02 frame=38, windows=7, EEF max delta=29.447547mm gripper final closed=0 legacy match=True
+[ 29/138] P00034.pkl: task=03 frame=37, windows=6, EEF max delta=32.914383mm gripper final closed=0 legacy match=True
+[ 30/138] P00035.pkl: task=03 frame=38, windows=7, EEF max delta=32.426707mm gripper final closed=0 legacy match=True
+[ 31/138] P00036.pkl: task=03 frame=40, windows=7, EEF max delta=31.247392mm gripper final closed=0 legacy match=True
+[ 32/138] P00037.pkl: task=03 frame=36, windows=6, EEF max delta=36.849311mm gripper final closed=0 legacy match=True
+[ 33/138] P00038.pkl: task=03 frame=44, windows=8, EEF max delta=30.178977mm gripper final closed=0 legacy match=True
+[ 34/138] P00039.pkl: task=03 frame=44, windows=8, EEF max delta=31.733844mm gripper final closed=0 legacy match=True
+[ 35/138] P00051.pkl: task=03 frame=43, windows=8, EEF max delta=29.310595mm gripper final closed=0 legacy match=True
+[ 36/138] P00052.pkl: task=03 frame=40, windows=7, EEF max delta=28.608088mm gripper final closed=0 legacy match=True
+[ 37/138] P00053.pkl: task=03 frame=44, windows=8, EEF max delta=38.335595mm gripper final closed=0 legacy match=True
+[ 38/138] P00054.pkl: task=03 frame=41, windows=7, EEF max delta=33.059262mm gripper final closed=0 legacy match=True
+[ 39/138] P00055.pkl: task=03 frame=34, windows=6, EEF max delta=29.596931mm gripper final closed=0 legacy match=True
+[ 40/138] P00056.pkl: task=03 frame=51, windows=9, EEF max delta=35.109005mm gripper final closed=0 legacy match=True
+[ 41/138] P00057.pkl: task=03 frame=37, windows=6, EEF max delta=36.279197mm gripper final closed=0 legacy match=True
+[ 42/138] P00058.pkl: task=03 frame=35, windows=6, EEF max delta=30.594793mm gripper final closed=0 legacy match=True
+[ 43/138] P00059.pkl: task=03 frame=41, windows=7, EEF max delta=48.911603mm gripper final closed=0 legacy match=True
+[ 44/138] P00060.pkl: task=03 frame=38, windows=7, EEF max delta=36.411264mm gripper final closed=0 legacy match=True
+[ 45/138] P00061.pkl: task=03 frame=40, windows=7, EEF max delta=29.068548mm gripper final closed=0 legacy match=True
+[ 46/138] P00062.pkl: task=03 frame=50, windows=9, EEF max delta=33.489841mm gripper final closed=0 legacy match=True
+[ 47/138] P00063.pkl: task=03 frame=37, windows=6, EEF max delta=35.190531mm gripper final closed=0 legacy match=True
+[ 48/138] P00064.pkl: task=03 frame=37, windows=6, EEF max delta=28.606031mm gripper final closed=0 legacy match=True
+[ 49/138] P00065.pkl: task=03 frame=37, windows=6, EEF max delta=31.422624mm gripper final closed=0 legacy match=True
+[ 50/138] P00066.pkl: task=04 frame=21, windows=3, EEF max delta=34.486803mm gripper final closed=1 legacy match=True
+[ 51/138] P00067.pkl: task=04 frame=18, windows=3, EEF max delta=34.541433mm gripper final closed=1 legacy match=True
+[ 52/138] P00068.pkl: task=04 frame=19, windows=3, EEF max delta=36.311438mm gripper final closed=1 legacy match=True
+[ 53/138] P00069.pkl: task=04 frame=19, windows=3, EEF max delta=28.916301mm gripper final closed=1 legacy match=True
+[ 54/138] P00070.pkl: task=04 frame=24, windows=4, EEF max delta=31.637891mm gripper final closed=1 legacy match=True
+[ 55/138] P00071.pkl: task=04 frame=17, windows=2, EEF max delta=38.436482mm gripper final closed=1 legacy match=True
+[ 56/138] P00072.pkl: task=04 frame=19, windows=3, EEF max delta=27.683932mm gripper final closed=1 legacy match=True
+[ 57/138] P00073.pkl: task=04 frame=20, windows=3, EEF max delta=34.093787mm gripper final closed=1 legacy match=True
+[ 58/138] P00074.pkl: task=04 frame=25, windows=4, EEF max delta=32.551023mm gripper final closed=1 legacy match=True
+[ 59/138] P00075.pkl: task=04 frame=20, windows=3, EEF max delta=34.440395mm gripper final closed=1 legacy match=True
+[ 60/138] P00076.pkl: task=04 frame=19, windows=3, EEF max delta=60.225309mm gripper final closed=1 legacy match=True
+[ 61/138] P00078.pkl: task=04 frame=22, windows=3, EEF max delta=35.091609mm gripper final closed=1 legacy match=True
+[ 62/138] P00079.pkl: task=04 frame=19, windows=3, EEF max delta=28.24418mm gripper final closed=1 legacy match=True
+[ 63/138] P00080.pkl: task=04 frame=19, windows=3, EEF max delta=31.919742mm gripper final closed=1 legacy match=True
+[ 64/138] P00081.pkl: task=04 frame=21, windows=3, EEF max delta=28.67135mm gripper final closed=1 legacy match=True
+[ 65/138] P00082.pkl: task=05 frame=32, windows=5, EEF max delta=29.626025mm gripper final closed=0 legacy match=True
+[ 66/138] P00083.pkl: task=05 frame=35, windows=6, EEF max delta=32.474695mm gripper final closed=0 legacy match=True
+[ 67/138] P00084.pkl: task=05 frame=45, windows=8, EEF max delta=35.347149mm gripper final closed=0 legacy match=True
+[ 68/138] P00098.pkl: task=06 frame=40, windows=7, EEF max delta=42.366697mm gripper final closed=0 legacy match=True
+[ 69/138] P00099.pkl: task=06 frame=37, windows=6, EEF max delta=34.046773mm gripper final closed=0 legacy match=True
+[ 70/138] P00100.pkl: task=06 frame=39, windows=7, EEF max delta=32.577943mm gripper final closed=0 legacy match=True
+[ 71/138] P00101.pkl: task=06 frame=39, windows=7, EEF max delta=34.63585mm gripper final closed=0 legacy match=True
+[ 72/138] P00102.pkl: task=06 frame=46, windows=8, EEF max delta=37.02029mm gripper final closed=0 legacy match=True
+[ 73/138] P00103.pkl: task=06 frame=47, windows=8, EEF max delta=39.569768mm gripper final closed=0 legacy match=True
+[ 74/138] P00104.pkl: task=06 frame=48, windows=9, EEF max delta=44.414387mm gripper final closed=0 legacy match=True
+[ 75/138] P00105.pkl: task=06 frame=50, windows=9, EEF max delta=58.348372mm gripper final closed=0 legacy match=True
+[ 76/138] P00111.pkl: task=07 frame=51, windows=9, EEF max delta=33.341544mm gripper final closed=0 legacy match=True
+[ 77/138] P00112.pkl: task=07 frame=36, windows=6, EEF max delta=36.998376mm gripper final closed=0 legacy match=True
+[ 78/138] P00113.pkl: task=07 frame=48, windows=9, EEF max delta=32.948891mm gripper final closed=0 legacy match=True
+[ 79/138] P00114.pkl: task=07 frame=36, windows=6, EEF max delta=31.508403mm gripper final closed=0 legacy match=True
+[ 80/138] P00115.pkl: task=07 frame=45, windows=8, EEF max delta=34.430434mm gripper final closed=0 legacy match=True
+[ 81/138] P00116.pkl: task=07 frame=36, windows=6, EEF max delta=32.280854mm gripper final closed=0 legacy match=True
+[ 82/138] P00117.pkl: task=07 frame=44, windows=8, EEF max delta=35.340215mm gripper final closed=0 legacy match=True
+[ 83/138] P00118.pkl: task=07 frame=37, windows=6, EEF max delta=33.833338mm gripper final closed=0 legacy match=True
+[ 84/138] P00119.pkl: task=07 frame=51, windows=9, EEF max delta=34.266253mm gripper final closed=0 legacy match=True
+[ 85/138] P00120.pkl: task=07 frame=35, windows=6, EEF max delta=42.727852mm gripper final closed=0 legacy match=True
+[ 86/138] P00121.pkl: task=07 frame=57, windows=10, EEF max delta=32.784365mm gripper final closed=0 legacy match=True
+[ 87/138] P00122.pkl: task=07 frame=35, windows=6, EEF max delta=34.005793mm gripper final closed=0 legacy match=True
+[ 88/138] P00123.pkl: task=07 frame=45, windows=8, EEF max delta=47.453142mm gripper final closed=0 legacy match=True
+[ 89/138] P00124.pkl: task=07 frame=37, windows=6, EEF max delta=65.825608mm gripper final closed=0 legacy match=True
+[ 90/138] P00125.pkl: task=07 frame=39, windows=7, EEF max delta=48.606145mm gripper final closed=0 legacy match=True
+[ 91/138] P00128.pkl: task=07 frame=37, windows=6, EEF max delta=40.041508mm gripper final closed=0 legacy match=True
+[ 92/138] P00129.pkl: task=07 frame=40, windows=7, EEF max delta=32.216426mm gripper final closed=0 legacy match=True
+[ 93/138] P00130.pkl: task=07 frame=39, windows=7, EEF max delta=36.051822mm gripper final closed=0 legacy match=True
+[ 94/138] P00131.pkl: task=07 frame=45, windows=8, EEF max delta=32.097937mm gripper final closed=0 legacy match=True
+[ 95/138] P00137.pkl: task=07 frame=36, windows=6, EEF max delta=37.241298mm gripper final closed=0 legacy match=True
+[ 96/138] P00138.pkl: task=08 frame=33, windows=6, EEF max delta=36.879078mm gripper final closed=0 legacy match=True
+[ 97/138] P00139.pkl: task=08 frame=32, windows=5, EEF max delta=35.022898mm gripper final closed=0 legacy match=True
+[ 98/138] P00140.pkl: task=08 frame=32, windows=5, EEF max delta=41.990171mm gripper final closed=0 legacy match=True
+[ 99/138] P00141.pkl: task=08 frame=33, windows=6, EEF max delta=40.506184mm gripper final closed=0 legacy match=True
+[100/138] P00142.pkl: task=08 frame=33, windows=6, EEF max delta=43.404769mm gripper final closed=0 legacy match=True
+[101/138] P00143.pkl: task=08 frame=33, windows=6, EEF max delta=39.687851mm gripper final closed=0 legacy match=True
+[102/138] P00144.pkl: task=08 frame=33, windows=6, EEF max delta=32.812697mm gripper final closed=0 legacy match=True
+[103/138] P00146.pkl: task=08 frame=33, windows=6, EEF max delta=54.115469mm gripper final closed=0 legacy match=True
+[104/138] P00147.pkl: task=08 frame=33, windows=6, EEF max delta=34.179151mm gripper final closed=0 legacy match=True
+[105/138] P00148.pkl: task=08 frame=32, windows=5, EEF max delta=33.279838mm gripper final closed=0 legacy match=True
+[106/138] P00149.pkl: task=08 frame=32, windows=5, EEF max delta=37.947645mm gripper final closed=0 legacy match=True
+[107/138] P00150.pkl: task=08 frame=32, windows=5, EEF max delta=34.591497mm gripper final closed=0 legacy match=True
+[108/138] P00151.pkl: task=08 frame=32, windows=5, EEF max delta=35.961931mm gripper final closed=0 legacy match=True
+[109/138] P00152.pkl: task=08 frame=32, windows=5, EEF max delta=35.828965mm gripper final closed=0 legacy match=True
+[110/138] P00153.pkl: task=08 frame=33, windows=6, EEF max delta=32.219201mm gripper final closed=0 legacy match=True
+[111/138] P00154.pkl: task=08 frame=33, windows=6, EEF max delta=40.159991mm gripper final closed=0 legacy match=True
+[112/138] P00155.pkl: task=08 frame=33, windows=6, EEF max delta=31.133862mm gripper final closed=0 legacy match=True
+[113/138] P00156.pkl: task=08 frame=33, windows=6, EEF max delta=34.457023mm gripper final closed=0 legacy match=True
+[114/138] P00157.pkl: task=08 frame=32, windows=5, EEF max delta=39.432627mm gripper final closed=0 legacy match=True
+[115/138] P00158.pkl: task=08 frame=32, windows=5, EEF max delta=33.886119mm gripper final closed=0 legacy match=True
+[116/138] P00159.pkl: task=08 frame=32, windows=5, EEF max delta=37.70845mm gripper final closed=0 legacy match=True
+[117/138] P00160.pkl: task=09 frame=34, windows=6, EEF max delta=46.471598mm gripper final closed=0 legacy match=True
+[118/138] P00167.pkl: task=09 frame=32, windows=5, EEF max delta=37.445749mm gripper final closed=0 legacy match=True
+[119/138] P00168.pkl: task=09 frame=35, windows=6, EEF max delta=32.505483mm gripper final closed=0 legacy match=True
+[120/138] P00169.pkl: task=09 frame=38, windows=7, EEF max delta=31.473698mm gripper final closed=0 legacy match=True
+[121/138] P00170.pkl: task=09 frame=36, windows=6, EEF max delta=32.681359mm gripper final closed=0 legacy match=True
+[122/138] P00171.pkl: task=09 frame=35, windows=6, EEF max delta=30.481807mm gripper final closed=0 legacy match=True
+[123/138] P00172.pkl: task=09 frame=41, windows=7, EEF max delta=31.556857mm gripper final closed=0 legacy match=True
+[124/138] P00173.pkl: task=09 frame=41, windows=7, EEF max delta=35.851266mm gripper final closed=0 legacy match=True
+[125/138] P00174.pkl: task=09 frame=35, windows=6, EEF max delta=31.656117mm gripper final closed=0 legacy match=True
+[126/138] P00175.pkl: task=09 frame=35, windows=6, EEF max delta=34.130822mm gripper final closed=0 legacy match=True
+[127/138] P00176.pkl: task=09 frame=35, windows=6, EEF max delta=30.522249mm gripper final closed=0 legacy match=True
+[128/138] P00177.pkl: task=09 frame=37, windows=6, EEF max delta=34.067577mm gripper final closed=0 legacy match=True
+[129/138] P00178.pkl: task=09 frame=37, windows=6, EEF max delta=34.026559mm gripper final closed=0 legacy match=True
+[130/138] P00179.pkl: task=09 frame=45, windows=8, EEF max delta=34.195204mm gripper final closed=0 legacy match=True
+[131/138] P00183.pkl: task=09 frame=33, windows=6, EEF max delta=31.846551mm gripper final closed=0 legacy match=True
+[132/138] P00184.pkl: task=09 frame=37, windows=6, EEF max delta=34.65103mm gripper final closed=0 legacy match=True
+[133/138] P00185.pkl: task=09 frame=34, windows=6, EEF max delta=33.743679mm gripper final closed=0 legacy match=True
+[134/138] P00186.pkl: task=09 frame=36, windows=6, EEF max delta=39.649985mm gripper final closed=0 legacy match=True
+[135/138] P00187.pkl: task=09 frame=38, windows=7, EEF max delta=32.613091mm gripper final closed=0 legacy match=True
+[136/138] P00188.pkl: task=09 frame=32, windows=5, EEF max delta=31.311736mm gripper final closed=0 legacy match=True
+[137/138] P00189.pkl: task=09 frame=37, windows=6, EEF max delta=37.213707mm gripper final closed=0 legacy match=True
+[138/138] P00190.pkl: task=09 frame=34, windows=6, EEF max delta=37.070514mm gripper final closed=0 legacy match=True
+DONE: episodes=138, frame=5027, transizioni=4889, finestre=866, writes=False

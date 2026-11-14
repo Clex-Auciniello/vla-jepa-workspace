@@ -1,0 +1,61 @@
+
+=== VISUAL EXCLUSIONS: VERIFIED ===
+CSV: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/scripts/valutazioni_ultimi_frame.csv
+Quarantine: /mnt/beegfs/a.cuciniello9/datasets/mixture/quarantena_48_ultimo_frame_20261114
+COD       :  66 before | 19 exclude |  47 remain
+OSVI-AWDA : 191 before | 12 exclude | 179 remain
+VLA-JEPA  : 187 before | 17 exclude | 170 remain
+
+EXACT FILES TO EXCLUDE:
+  COD        task_01/traj_004.pkl 
+  COD        task_03/traj_000.pkl 
+  COD        task_05/traj_002.pkl 
+  COD        task_06/traj_000.pkl 
+  COD        task_07/traj_000.pkl 
+  COD        task_09/traj_000.pkl 
+  COD        task_09/traj_004.pkl 
+  COD        task_09/traj_005.pkl 
+  COD        task_10/traj_000.pkl 
+  COD        task_10/traj_001.pkl 
+  COD        task_11/traj_000.pkl 
+  COD        task_11/traj_002.pkl 
+  COD        task_12/traj_004.pkl 
+  COD        task_13/traj_000.pkl 
+  COD        task_14/traj_000.pkl 
+  COD        task_14/traj_001.pkl 
+  COD        task_14/traj_002.pkl 
+  COD        task_15/traj_000.pkl 
+  COD        task_15/traj_002.pkl 
+  OSVI-AWDA  task_02/traj_000.pkl 
+  OSVI-AWDA  task_02/traj_001.pkl 
+  OSVI-AWDA  task_02/traj_002.pkl 
+  OSVI-AWDA  task_02/traj_004.pkl 
+  OSVI-AWDA  task_02/traj_011.pkl 
+  OSVI-AWDA  task_03/traj_008.pkl 
+  OSVI-AWDA  task_03/traj_009.pkl 
+  OSVI-AWDA  task_06/traj_006.pkl 
+  OSVI-AWDA  task_12/traj_012.pkl 
+  OSVI-AWDA  task_14/traj_011.pkl 
+  OSVI-AWDA  task_15/traj_010.pkl 
+  OSVI-AWDA  task_15/traj_011.pkl 
+  VLA-JEPA   task_03/traj_008.pkl 
+  VLA-JEPA   task_03/traj_009.pkl 
+  VLA-JEPA   task_05/traj_003.pkl 
+  VLA-JEPA   task_05/traj_004.pkl 
+  VLA-JEPA   task_06/traj_009.pkl 
+  VLA-JEPA   task_06/traj_011.pkl 
+  VLA-JEPA   task_08/traj_001.pkl 
+  VLA-JEPA   task_08/traj_005.pkl 
+  VLA-JEPA   task_08/traj_007.pkl 
+  VLA-JEPA   task_09/traj_003.pkl 
+  VLA-JEPA   task_09/traj_005.pkl 
+  VLA-JEPA   task_10/traj_005.pkl 
+  VLA-JEPA   task_12/traj_002.pkl 
+  VLA-JEPA   task_13/traj_000.pkl 
+  VLA-JEPA   task_13/traj_008.pkl 
+  VLA-JEPA   task_15/traj_000.pkl 
+  VLA-JEPA   task_15/traj_003.pkl 
+
+Total: 48 PKL + 48 paired JSON; 3 manifests to update.
+
+DRY-RUN: no files changed. Re-run with --execute to apply.

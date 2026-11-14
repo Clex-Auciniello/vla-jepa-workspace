@@ -1,0 +1,24 @@
+Original=440 | static excluded=33 | jumps excluded=7 | selected=400
+Exception raised during import
+[GRIPPER AUDIT] 50/400
+[GRIPPER AUDIT] 100/400
+[GRIPPER AUDIT] 150/400
+[GRIPPER AUDIT] 200/400
+[GRIPPER AUDIT] 250/400
+[GRIPPER AUDIT] 300/400
+[GRIPPER AUDIT] 350/400
+[GRIPPER AUDIT] 400/400
+
+=== GRIPPER THRESHOLDS (episode-level) ===
+threshold  TP  FP  FN  TN  close_edges  open_edges
+     0.15  176   0   0 224          176          14
+     0.18  176   0   0 224          176          14
+     0.20  176   0   0 224          176          14
+     0.25  175   0   1 224          175          14
+     0.30  174   0   2 224          174          16
+     0.35  167   0   9 224          167          16
+     0.38  163   0  13 224          163          16
+     0.40  161   0  15 224          161          16
+     0.42  160   0  16 224          160          17
+     0.45  157   0  19 224          157          20
+Diagnostics in: /mnt/beegfs/a.cuciniello9/datasets/robotic/exploration_action_audit

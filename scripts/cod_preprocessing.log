@@ -1,0 +1,78 @@
+Exception raised during import
+[cod_epoch_100_wrist_clean] selected 28 PKLs
+[cod_finetuning_no_wrist_clean] selected 38 PKLs
+
+Selected 66 trajectories; output=/mnt/beegfs/a.cuciniello9/datasets/mixture/cod_preprocessed; dry_run=False
+[001/066] OK cod_finetuning_no_wrist_clean/task_00/traj_000.pkl -> task_00/traj_000.pkl T=40 lag=1 terminal_original=OPEN
+[002/066] OK cod_finetuning_no_wrist_clean/task_00/traj_002.pkl -> task_00/traj_001.pkl T=40 lag=1 terminal_original=OPEN
+[003/066] OK cod_epoch_100_wrist_clean/task_01/traj_000.pkl -> task_01/traj_000.pkl T=41 lag=1 terminal_original=CLOSE
+[004/066] OK cod_epoch_100_wrist_clean/task_01/traj_001.pkl -> task_01/traj_001.pkl T=36 lag=1 terminal_original=OPEN
+[005/066] OK cod_finetuning_no_wrist_clean/task_01/traj_000.pkl -> task_01/traj_002.pkl T=37 lag=1 terminal_original=OPEN
+[006/066] OK cod_finetuning_no_wrist_clean/task_01/traj_001.pkl -> task_01/traj_003.pkl T=44 lag=1 terminal_original=OPEN
+[007/066] OK cod_finetuning_no_wrist_clean/task_01/traj_003.pkl -> task_01/traj_004.pkl T=47 lag=1 terminal_original=OPEN
+[008/066] OK cod_epoch_100_wrist_clean/task_02/traj_000.pkl -> task_02/traj_000.pkl T=34 lag=1 terminal_original=OPEN
+[009/066] OK cod_epoch_100_wrist_clean/task_02/traj_001.pkl -> task_02/traj_001.pkl T=23 lag=1 terminal_original=OPEN
+[010/066] OK cod_finetuning_no_wrist_clean/task_02/traj_000.pkl -> task_02/traj_002.pkl T=35 lag=1 terminal_original=OPEN
+[011/066] OK cod_epoch_100_wrist_clean/task_03/traj_000.pkl -> task_03/traj_000.pkl T=22 lag=1 terminal_original=OPEN
+[012/066] OK cod_epoch_100_wrist_clean/task_03/traj_001.pkl -> task_03/traj_001.pkl T=26 lag=1 terminal_original=OPEN
+[013/066] OK cod_epoch_100_wrist_clean/task_03/traj_003.pkl -> task_03/traj_002.pkl T=47 lag=1 terminal_original=OPEN
+[014/066] OK cod_finetuning_no_wrist_clean/task_03/traj_000.pkl -> task_03/traj_003.pkl T=36 lag=1 terminal_original=OPEN
+[015/066] OK cod_finetuning_no_wrist_clean/task_03/traj_001.pkl -> task_03/traj_004.pkl T=41 lag=1 terminal_original=OPEN
+[016/066] OK cod_finetuning_no_wrist_clean/task_03/traj_003.pkl -> task_03/traj_005.pkl T=48 lag=2 terminal_original=OPEN
+[017/066] OK cod_finetuning_no_wrist_clean/task_04/traj_000.pkl -> task_04/traj_000.pkl T=48 lag=2 terminal_original=OPEN
+[018/066] OK cod_finetuning_no_wrist_clean/task_04/traj_001.pkl -> task_04/traj_001.pkl T=39 lag=1 terminal_original=OPEN
+[019/066] OK cod_finetuning_no_wrist_clean/task_04/traj_002.pkl -> task_04/traj_002.pkl T=48 lag=1 terminal_original=OPEN
+[020/066] OK cod_epoch_100_wrist_clean/task_05/traj_001.pkl -> task_05/traj_000.pkl T=36 lag=1 terminal_original=OPEN
+[021/066] OK cod_epoch_100_wrist_clean/task_05/traj_004.pkl -> task_05/traj_001.pkl T=57 lag=1 terminal_original=OPEN
+[022/066] OK cod_epoch_100_wrist_clean/task_05/traj_005.pkl -> task_05/traj_002.pkl T=38 lag=1 terminal_original=OPEN
+[023/066] OK cod_finetuning_no_wrist_clean/task_05/traj_004.pkl -> task_05/traj_003.pkl T=49 lag=4 terminal_original=OPEN
+[024/066] OK cod_epoch_100_wrist_clean/task_06/traj_000.pkl -> task_06/traj_000.pkl T=27 lag=1 terminal_original=OPEN
+[025/066] OK cod_epoch_100_wrist_clean/task_06/traj_001.pkl -> task_06/traj_001.pkl T=30 lag=1 terminal_original=OPEN
+[026/066] OK cod_finetuning_no_wrist_clean/task_06/traj_000.pkl -> task_06/traj_002.pkl T=35 lag=1 terminal_original=OPEN
+[027/066] OK cod_finetuning_no_wrist_clean/task_06/traj_003.pkl -> task_06/traj_003.pkl T=53 lag=1 terminal_original=OPEN
+[028/066] OK cod_epoch_100_wrist_clean/task_07/traj_000.pkl -> task_07/traj_000.pkl T=25 lag=1 terminal_original=OPEN
+[029/066] OK cod_epoch_100_wrist_clean/task_07/traj_001.pkl -> task_07/traj_001.pkl T=28 lag=1 terminal_original=OPEN
+[030/066] OK cod_finetuning_no_wrist_clean/task_07/traj_000.pkl -> task_07/traj_002.pkl T=44 lag=1 terminal_original=OPEN
+[031/066] OK cod_finetuning_no_wrist_clean/task_07/traj_002.pkl -> task_07/traj_003.pkl T=36 lag=1 terminal_original=OPEN
+[032/066] OK cod_finetuning_no_wrist_clean/task_08/traj_000.pkl -> task_08/traj_000.pkl T=40 lag=1 terminal_original=OPEN
+[033/066] OK cod_finetuning_no_wrist_clean/task_08/traj_001.pkl -> task_08/traj_001.pkl T=41 lag=1 terminal_original=OPEN
+[034/066] OK cod_finetuning_no_wrist_clean/task_08/traj_002.pkl -> task_08/traj_002.pkl T=36 lag=1 terminal_original=OPEN
+[035/066] OK cod_epoch_100_wrist_clean/task_09/traj_000.pkl -> task_09/traj_000.pkl T=27 lag=1 terminal_original=OPEN
+[036/066] OK cod_epoch_100_wrist_clean/task_09/traj_001.pkl -> task_09/traj_001.pkl T=30 lag=1 terminal_original=OPEN
+[037/066] OK cod_epoch_100_wrist_clean/task_09/traj_003.pkl -> task_09/traj_002.pkl T=42 lag=1 terminal_original=CLOSE
+[038/066] OK cod_finetuning_no_wrist_clean/task_09/traj_000.pkl -> task_09/traj_003.pkl T=47 lag=1 terminal_original=OPEN
+[039/066] OK cod_finetuning_no_wrist_clean/task_09/traj_001.pkl -> task_09/traj_004.pkl T=37 lag=1 terminal_original=OPEN
+[040/066] OK cod_finetuning_no_wrist_clean/task_09/traj_002.pkl -> task_09/traj_005.pkl T=44 lag=1 terminal_original=OPEN
+[041/066] OK cod_epoch_100_wrist_clean/task_10/traj_006.pkl -> task_10/traj_000.pkl T=27 lag=1 terminal_original=OPEN
+[042/066] OK cod_epoch_100_wrist_clean/task_10/traj_008.pkl -> task_10/traj_001.pkl T=27 lag=1 terminal_original=OPEN
+[043/066] OK cod_finetuning_no_wrist_clean/task_10/traj_000.pkl -> task_10/traj_002.pkl T=35 lag=1 terminal_original=OPEN
+[044/066] OK cod_finetuning_no_wrist_clean/task_10/traj_002.pkl -> task_10/traj_003.pkl T=41 lag=1 terminal_original=OPEN
+[045/066] OK cod_finetuning_no_wrist_clean/task_10/traj_003.pkl -> task_10/traj_004.pkl T=48 lag=1 terminal_original=OPEN
+[046/066] OK cod_epoch_100_wrist_clean/task_11/traj_000.pkl -> task_11/traj_000.pkl T=25 lag=1 terminal_original=OPEN
+[047/066] OK cod_epoch_100_wrist_clean/task_11/traj_001.pkl -> task_11/traj_001.pkl T=32 lag=1 terminal_original=OPEN
+[048/066] OK cod_finetuning_no_wrist_clean/task_11/traj_000.pkl -> task_11/traj_002.pkl T=41 lag=1 terminal_original=OPEN
+[049/066] OK cod_epoch_100_wrist_clean/task_12/traj_001.pkl -> task_12/traj_000.pkl T=37 lag=1 terminal_original=OPEN
+[050/066] OK cod_finetuning_no_wrist_clean/task_12/traj_000.pkl -> task_12/traj_001.pkl T=44 lag=1 terminal_original=OPEN
+[051/066] OK cod_finetuning_no_wrist_clean/task_12/traj_001.pkl -> task_12/traj_002.pkl T=37 lag=1 terminal_original=OPEN
+[052/066] OK cod_finetuning_no_wrist_clean/task_12/traj_002.pkl -> task_12/traj_003.pkl T=36 lag=1 terminal_original=OPEN
+[053/066] OK cod_finetuning_no_wrist_clean/task_12/traj_003.pkl -> task_12/traj_004.pkl T=47 lag=1 terminal_original=OPEN
+[054/066] OK cod_epoch_100_wrist_clean/task_13/traj_000.pkl -> task_13/traj_000.pkl T=34 lag=1 terminal_original=OPEN
+[055/066] OK cod_epoch_100_wrist_clean/task_13/traj_001.pkl -> task_13/traj_001.pkl T=39 lag=1 terminal_original=OPEN
+[056/066] OK cod_finetuning_no_wrist_clean/task_13/traj_000.pkl -> task_13/traj_002.pkl T=47 lag=1 terminal_original=OPEN
+[057/066] OK cod_finetuning_no_wrist_clean/task_13/traj_002.pkl -> task_13/traj_003.pkl T=47 lag=1 terminal_original=OPEN
+[058/066] OK cod_epoch_100_wrist_clean/task_14/traj_000.pkl -> task_14/traj_000.pkl T=27 lag=1 terminal_original=OPEN
+[059/066] OK cod_epoch_100_wrist_clean/task_14/traj_001.pkl -> task_14/traj_001.pkl T=29 lag=1 terminal_original=OPEN
+[060/066] OK cod_epoch_100_wrist_clean/task_14/traj_003.pkl -> task_14/traj_002.pkl T=44 lag=1 terminal_original=OPEN
+[061/066] OK cod_finetuning_no_wrist_clean/task_14/traj_000.pkl -> task_14/traj_003.pkl T=40 lag=1 terminal_original=OPEN
+[062/066] OK cod_finetuning_no_wrist_clean/task_14/traj_001.pkl -> task_14/traj_004.pkl T=56 lag=2 terminal_original=OPEN
+[063/066] OK cod_finetuning_no_wrist_clean/task_14/traj_002.pkl -> task_14/traj_005.pkl T=37 lag=1 terminal_original=OPEN
+[064/066] OK cod_epoch_100_wrist_clean/task_15/traj_008.pkl -> task_15/traj_000.pkl T=27 lag=1 terminal_original=OPEN
+[065/066] OK cod_finetuning_no_wrist_clean/task_15/traj_000.pkl -> task_15/traj_001.pkl T=51 lag=1 terminal_original=OPEN
+[066/066] OK cod_finetuning_no_wrist_clean/task_15/traj_001.pkl -> task_15/traj_002.pkl T=36 lag=2 terminal_original=OPEN
+
+=== DONE ===
+Count by source: {'cod_finetuning_no_wrist_clean': 38, 'cod_epoch_100_wrist_clean': 28}
+Total trajectories: 66 total frames: 2525
+Destination: /mnt/beegfs/a.cuciniello9/datasets/mixture/cod_preprocessed
+Manifest: /mnt/beegfs/a.cuciniello9/datasets/mixture/cod_preprocessed/manifest.csv
+Original PKLs and JSONs were not modified.

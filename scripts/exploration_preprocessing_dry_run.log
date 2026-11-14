@@ -1,0 +1,404 @@
+Original=440 | static excluded=33 | jumps excluded=7 | selected=400
+Mode=dry-run, selected=400, output=/mnt/beegfs/a.cuciniello9/datasets/mixture/exploration_preprocessed, gripper threshold=0.2, verify old WM=True
+Exception raised during import
+[  1/400] E00001.pkl: 47 frames, 8 windows, gripper closed frames=18 | max XYZ=31.382316mm | old WM match=True
+[  2/400] E00002.pkl: 55 frames, 10 windows, gripper closed frames=0 | max XYZ=32.73706mm | old WM match=True
+[  3/400] E00003.pkl: 35 frames, 6 windows, gripper closed frames=0 | max XYZ=31.489194mm | old WM match=True
+[  4/400] E00004.pkl: 79 frames, 15 windows, gripper closed frames=1 | max XYZ=35.979092mm | old WM match=True
+[  5/400] E00005.pkl: 79 frames, 15 windows, gripper closed frames=55 | max XYZ=32.710873mm | old WM match=True
+[  6/400] E00006.pkl: 68 frames, 13 windows, gripper closed frames=0 | max XYZ=31.18976mm | old WM match=True
+[  7/400] E00007.pkl: 107 frames, 20 windows, gripper closed frames=30 | max XYZ=32.946098mm | old WM match=True
+[  8/400] E00008.pkl: 77 frames, 14 windows, gripper closed frames=0 | max XYZ=32.063627mm | old WM match=True
+[  9/400] E00009.pkl: 73 frames, 14 windows, gripper closed frames=1 | max XYZ=36.088486mm | old WM match=True
+[ 10/400] E00010.pkl: 55 frames, 10 windows, gripper closed frames=0 | max XYZ=31.086192mm | old WM match=True
+[ 11/400] E00011.pkl: 48 frames, 9 windows, gripper closed frames=0 | max XYZ=68.305318mm | old WM match=True
+[ 12/400] E00012.pkl: 46 frames, 8 windows, gripper closed frames=31 | max XYZ=45.81655mm | old WM match=True
+[ 13/400] E00013.pkl: 75 frames, 14 windows, gripper closed frames=0 | max XYZ=85.772544mm | old WM match=True
+[ 14/400] E00026.pkl: 105 frames, 20 windows, gripper closed frames=81 | max XYZ=33.534752mm | old WM match=True
+[ 15/400] E00027.pkl: 72 frames, 13 windows, gripper closed frames=0 | max XYZ=36.7688mm | old WM match=True
+[ 16/400] E00028.pkl: 72 frames, 13 windows, gripper closed frames=0 | max XYZ=29.511324mm | old WM match=True
+[ 17/400] E00029.pkl: 65 frames, 12 windows, gripper closed frames=46 | max XYZ=38.9932mm | old WM match=True
+[ 18/400] E00030.pkl: 87 frames, 16 windows, gripper closed frames=25 | max XYZ=32.792779mm | old WM match=True
+[ 19/400] E00031.pkl: 79 frames, 15 windows, gripper closed frames=0 | max XYZ=37.800404mm | old WM match=True
+[ 20/400] E00032.pkl: 46 frames, 8 windows, gripper closed frames=0 | max XYZ=35.438276mm | old WM match=True
+[ 21/400] E00033.pkl: 72 frames, 13 windows, gripper closed frames=29 | max XYZ=34.484946mm | old WM match=True
+[ 22/400] E00034.pkl: 56 frames, 10 windows, gripper closed frames=1 | max XYZ=35.508587mm | old WM match=True
+[ 23/400] E00035.pkl: 54 frames, 10 windows, gripper closed frames=27 | max XYZ=31.257207mm | old WM match=True
+[ 24/400] E00036.pkl: 67 frames, 12 windows, gripper closed frames=19 | max XYZ=36.192654mm | old WM match=True
+[ 25/400] E00037.pkl: 31 frames, 5 windows, gripper closed frames=8 | max XYZ=32.009042mm | old WM match=True
+[ 26/400] E00038.pkl: 23 frames, 4 windows, gripper closed frames=9 | max XYZ=31.348139mm | old WM match=True
+[ 27/400] E00039.pkl: 73 frames, 14 windows, gripper closed frames=0 | max XYZ=33.404371mm | old WM match=True
+[ 28/400] E00040.pkl: 95 frames, 18 windows, gripper closed frames=23 | max XYZ=34.291368mm | old WM match=True
+[ 29/400] E00041.pkl: 45 frames, 8 windows, gripper closed frames=0 | max XYZ=36.086664mm | old WM match=True
+[ 30/400] E00042.pkl: 48 frames, 9 windows, gripper closed frames=0 | max XYZ=35.334891mm | old WM match=True
+[ 31/400] E00043.pkl: 73 frames, 14 windows, gripper closed frames=61 | max XYZ=65.05408mm | old WM match=True
+[ 32/400] E00045.pkl: 53 frames, 10 windows, gripper closed frames=0 | max XYZ=38.056085mm | old WM match=True
+[ 33/400] E00046.pkl: 70 frames, 13 windows, gripper closed frames=10 | max XYZ=31.53103mm | old WM match=True
+[ 34/400] E00047.pkl: 56 frames, 10 windows, gripper closed frames=22 | max XYZ=32.379741mm | old WM match=True
+[ 35/400] E00048.pkl: 57 frames, 10 windows, gripper closed frames=0 | max XYZ=37.345691mm | old WM match=True
+[ 36/400] E00049.pkl: 74 frames, 14 windows, gripper closed frames=0 | max XYZ=38.100925mm | old WM match=True
+[ 37/400] E00050.pkl: 77 frames, 14 windows, gripper closed frames=0 | max XYZ=33.547944mm | old WM match=True
+[ 38/400] E00051.pkl: 71 frames, 13 windows, gripper closed frames=0 | max XYZ=33.491009mm | old WM match=True
+[ 39/400] E00052.pkl: 66 frames, 12 windows, gripper closed frames=34 | max XYZ=38.09799mm | old WM match=True
+[ 40/400] E00053.pkl: 89 frames, 17 windows, gripper closed frames=0 | max XYZ=34.323358mm | old WM match=True
+[ 41/400] E00054.pkl: 68 frames, 13 windows, gripper closed frames=0 | max XYZ=34.631364mm | old WM match=True
+[ 42/400] E00055.pkl: 78 frames, 15 windows, gripper closed frames=0 | max XYZ=41.407542mm | old WM match=True
+[ 43/400] E00056.pkl: 94 frames, 18 windows, gripper closed frames=0 | max XYZ=40.843289mm | old WM match=True
+[ 44/400] E00057.pkl: 49 frames, 9 windows, gripper closed frames=0 | max XYZ=29.982215mm | old WM match=True
+[ 45/400] E00058.pkl: 74 frames, 14 windows, gripper closed frames=0 | max XYZ=35.330108mm | old WM match=True
+[ 46/400] E00059.pkl: 43 frames, 8 windows, gripper closed frames=7 | max XYZ=34.59472mm | old WM match=True
+[ 47/400] E00060.pkl: 71 frames, 13 windows, gripper closed frames=54 | max XYZ=33.799154mm | old WM match=True
+[ 48/400] E00061.pkl: 44 frames, 8 windows, gripper closed frames=38 | max XYZ=31.879845mm | old WM match=True
+[ 49/400] E00062.pkl: 71 frames, 13 windows, gripper closed frames=0 | max XYZ=32.821499mm | old WM match=True
+[ 50/400] E00063.pkl: 95 frames, 18 windows, gripper closed frames=0 | max XYZ=33.441522mm | old WM match=True
+[ 51/400] E00064.pkl: 78 frames, 15 windows, gripper closed frames=0 | max XYZ=34.780559mm | old WM match=True
+[ 52/400] E00065.pkl: 51 frames, 9 windows, gripper closed frames=45 | max XYZ=31.826053mm | old WM match=True
+[ 53/400] E00066.pkl: 41 frames, 7 windows, gripper closed frames=0 | max XYZ=32.699641mm | old WM match=True
+[ 54/400] E00067.pkl: 75 frames, 14 windows, gripper closed frames=31 | max XYZ=31.82359mm | old WM match=True
+[ 55/400] E00068.pkl: 56 frames, 10 windows, gripper closed frames=33 | max XYZ=59.140226mm | old WM match=True
+[ 56/400] E00070.pkl: 56 frames, 10 windows, gripper closed frames=18 | max XYZ=87.165743mm | old WM match=True
+[ 57/400] E00072.pkl: 50 frames, 9 windows, gripper closed frames=17 | max XYZ=34.240068mm | old WM match=True
+[ 58/400] E00073.pkl: 84 frames, 16 windows, gripper closed frames=62 | max XYZ=33.933621mm | old WM match=True
+[ 59/400] E00074.pkl: 53 frames, 10 windows, gripper closed frames=0 | max XYZ=31.562826mm | old WM match=True
+[ 60/400] E00075.pkl: 70 frames, 13 windows, gripper closed frames=13 | max XYZ=31.982071mm | old WM match=True
+[ 61/400] E00076.pkl: 66 frames, 12 windows, gripper closed frames=0 | max XYZ=34.405484mm | old WM match=True
+[ 62/400] E00077.pkl: 36 frames, 6 windows, gripper closed frames=0 | max XYZ=34.583315mm | old WM match=True
+[ 63/400] E00078.pkl: 51 frames, 9 windows, gripper closed frames=0 | max XYZ=35.230152mm | old WM match=True
+[ 64/400] E00079.pkl: 62 frames, 11 windows, gripper closed frames=0 | max XYZ=38.050183mm | old WM match=True
+[ 65/400] E00080.pkl: 58 frames, 11 windows, gripper closed frames=0 | max XYZ=35.028762mm | old WM match=True
+[ 66/400] E00081.pkl: 59 frames, 11 windows, gripper closed frames=0 | max XYZ=30.728177mm | old WM match=True
+[ 67/400] E00082.pkl: 67 frames, 12 windows, gripper closed frames=1 | max XYZ=34.539059mm | old WM match=True
+[ 68/400] E00083.pkl: 73 frames, 14 windows, gripper closed frames=17 | max XYZ=32.14893mm | old WM match=True
+[ 69/400] E00084.pkl: 72 frames, 13 windows, gripper closed frames=17 | max XYZ=33.235311mm | old WM match=True
+[ 70/400] E00085.pkl: 59 frames, 11 windows, gripper closed frames=0 | max XYZ=37.241356mm | old WM match=True
+[ 71/400] E00086.pkl: 45 frames, 8 windows, gripper closed frames=11 | max XYZ=33.043443mm | old WM match=True
+[ 72/400] E00087.pkl: 53 frames, 10 windows, gripper closed frames=0 | max XYZ=36.510931mm | old WM match=True
+[ 73/400] E00088.pkl: 44 frames, 8 windows, gripper closed frames=0 | max XYZ=31.458372mm | old WM match=True
+[ 74/400] E00089.pkl: 51 frames, 9 windows, gripper closed frames=0 | max XYZ=39.499262mm | old WM match=True
+[ 75/400] E00090.pkl: 78 frames, 15 windows, gripper closed frames=57 | max XYZ=37.850237mm | old WM match=True
+[ 76/400] E00091.pkl: 76 frames, 14 windows, gripper closed frames=48 | max XYZ=29.043298mm | old WM match=True
+[ 77/400] E00092.pkl: 75 frames, 14 windows, gripper closed frames=0 | max XYZ=33.617165mm | old WM match=True
+[ 78/400] E00093.pkl: 41 frames, 7 windows, gripper closed frames=13 | max XYZ=38.475503mm | old WM match=True
+[ 79/400] E00094.pkl: 76 frames, 14 windows, gripper closed frames=0 | max XYZ=34.647901mm | old WM match=True
+[ 80/400] E00095.pkl: 59 frames, 11 windows, gripper closed frames=0 | max XYZ=38.770822mm | old WM match=True
+[ 81/400] E00096.pkl: 62 frames, 11 windows, gripper closed frames=0 | max XYZ=33.826049mm | old WM match=True
+[ 82/400] E00097.pkl: 56 frames, 10 windows, gripper closed frames=0 | max XYZ=31.966639mm | old WM match=True
+[ 83/400] E00098.pkl: 47 frames, 8 windows, gripper closed frames=14 | max XYZ=32.318807mm | old WM match=True
+[ 84/400] E00099.pkl: 52 frames, 9 windows, gripper closed frames=1 | max XYZ=35.843906mm | old WM match=True
+[ 85/400] E00100.pkl: 80 frames, 15 windows, gripper closed frames=38 | max XYZ=35.266769mm | old WM match=True
+[ 86/400] E00101.pkl: 88 frames, 17 windows, gripper closed frames=0 | max XYZ=32.276441mm | old WM match=True
+[ 87/400] E00102.pkl: 62 frames, 11 windows, gripper closed frames=0 | max XYZ=34.628082mm | old WM match=True
+[ 88/400] E00103.pkl: 58 frames, 11 windows, gripper closed frames=28 | max XYZ=35.168608mm | old WM match=True
+[ 89/400] E00104.pkl: 84 frames, 16 windows, gripper closed frames=39 | max XYZ=37.690679mm | old WM match=True
+[ 90/400] E00105.pkl: 68 frames, 13 windows, gripper closed frames=0 | max XYZ=31.629025mm | old WM match=True
+[ 91/400] E00106.pkl: 70 frames, 13 windows, gripper closed frames=0 | max XYZ=32.362287mm | old WM match=True
+[ 92/400] E00107.pkl: 77 frames, 14 windows, gripper closed frames=0 | max XYZ=32.04856mm | old WM match=True
+[ 93/400] E00108.pkl: 63 frames, 12 windows, gripper closed frames=0 | max XYZ=41.021221mm | old WM match=True
+[ 94/400] E00109.pkl: 44 frames, 8 windows, gripper closed frames=1 | max XYZ=29.45734mm | old WM match=True
+[ 95/400] E00110.pkl: 67 frames, 12 windows, gripper closed frames=17 | max XYZ=32.75196mm | old WM match=True
+[ 96/400] E00111.pkl: 97 frames, 18 windows, gripper closed frames=49 | max XYZ=59.497732mm | old WM match=True
+[ 97/400] E00112.pkl: 37 frames, 6 windows, gripper closed frames=0 | max XYZ=45.106149mm | old WM match=True
+[ 98/400] E00114.pkl: 67 frames, 12 windows, gripper closed frames=47 | max XYZ=31.812342mm | old WM match=True
+[ 99/400] E00115.pkl: 50 frames, 9 windows, gripper closed frames=0 | max XYZ=29.707901mm | old WM match=True
+[100/400] E00116.pkl: 65 frames, 12 windows, gripper closed frames=0 | max XYZ=34.54507mm | old WM match=True
+[101/400] E00117.pkl: 53 frames, 10 windows, gripper closed frames=43 | max XYZ=39.041775mm | old WM match=True
+[102/400] E00118.pkl: 91 frames, 17 windows, gripper closed frames=0 | max XYZ=36.72613mm | old WM match=True
+[103/400] E00119.pkl: 52 frames, 9 windows, gripper closed frames=1 | max XYZ=30.821373mm | old WM match=True
+[104/400] E00120.pkl: 57 frames, 10 windows, gripper closed frames=48 | max XYZ=34.188799mm | old WM match=True
+[105/400] E00121.pkl: 63 frames, 12 windows, gripper closed frames=0 | max XYZ=34.136937mm | old WM match=True
+[106/400] E00122.pkl: 57 frames, 10 windows, gripper closed frames=1 | max XYZ=62.530269mm | old WM match=True
+[107/400] E00123.pkl: 75 frames, 14 windows, gripper closed frames=1 | max XYZ=31.743284mm | old WM match=True
+[108/400] E00124.pkl: 44 frames, 8 windows, gripper closed frames=0 | max XYZ=35.860347mm | old WM match=True
+[109/400] E00125.pkl: 73 frames, 14 windows, gripper closed frames=0 | max XYZ=47.116315mm | old WM match=True
+[110/400] E00128.pkl: 96 frames, 18 windows, gripper closed frames=0 | max XYZ=31.511188mm | old WM match=True
+[111/400] E00129.pkl: 45 frames, 8 windows, gripper closed frames=6 | max XYZ=33.348852mm | old WM match=True
+[112/400] E00130.pkl: 57 frames, 10 windows, gripper closed frames=0 | max XYZ=36.738377mm | old WM match=True
+[113/400] E00131.pkl: 31 frames, 5 windows, gripper closed frames=0 | max XYZ=35.88371mm | old WM match=True
+[114/400] E00132.pkl: 76 frames, 14 windows, gripper closed frames=0 | max XYZ=35.749533mm | old WM match=True
+[115/400] E00133.pkl: 73 frames, 14 windows, gripper closed frames=0 | max XYZ=35.247317mm | old WM match=True
+[116/400] E00134.pkl: 49 frames, 9 windows, gripper closed frames=26 | max XYZ=30.465358mm | old WM match=True
+[117/400] E00135.pkl: 55 frames, 10 windows, gripper closed frames=0 | max XYZ=38.65172mm | old WM match=True
+[118/400] E00136.pkl: 61 frames, 11 windows, gripper closed frames=0 | max XYZ=31.011079mm | old WM match=True
+[119/400] E00137.pkl: 60 frames, 11 windows, gripper closed frames=0 | max XYZ=33.444973mm | old WM match=True
+[120/400] E00138.pkl: 79 frames, 15 windows, gripper closed frames=60 | max XYZ=36.273981mm | old WM match=True
+[121/400] E00139.pkl: 50 frames, 9 windows, gripper closed frames=28 | max XYZ=34.359764mm | old WM match=True
+[122/400] E00140.pkl: 31 frames, 5 windows, gripper closed frames=0 | max XYZ=43.020819mm | old WM match=True
+[123/400] E00141.pkl: 88 frames, 17 windows, gripper closed frames=68 | max XYZ=99.551812mm | old WM match=True
+[124/400] E00142.pkl: 73 frames, 14 windows, gripper closed frames=0 | max XYZ=34.512424mm | old WM match=True
+[125/400] E00143.pkl: 62 frames, 11 windows, gripper closed frames=0 | max XYZ=33.828621mm | old WM match=True
+[126/400] E00144.pkl: 67 frames, 12 windows, gripper closed frames=54 | max XYZ=33.805182mm | old WM match=True
+[127/400] E00145.pkl: 61 frames, 11 windows, gripper closed frames=0 | max XYZ=35.783008mm | old WM match=True
+[128/400] E00146.pkl: 45 frames, 8 windows, gripper closed frames=0 | max XYZ=31.619925mm | old WM match=True
+[129/400] E00147.pkl: 51 frames, 9 windows, gripper closed frames=28 | max XYZ=32.451154mm | old WM match=True
+[130/400] E00148.pkl: 73 frames, 14 windows, gripper closed frames=0 | max XYZ=32.07512mm | old WM match=True
+[131/400] E00149.pkl: 68 frames, 13 windows, gripper closed frames=0 | max XYZ=35.668964mm | old WM match=True
+[132/400] E00150.pkl: 48 frames, 9 windows, gripper closed frames=19 | max XYZ=32.091172mm | old WM match=True
+[133/400] E00151.pkl: 73 frames, 14 windows, gripper closed frames=0 | max XYZ=36.444392mm | old WM match=True
+[134/400] E00152.pkl: 76 frames, 14 windows, gripper closed frames=40 | max XYZ=32.693142mm | old WM match=True
+[135/400] E00153.pkl: 82 frames, 15 windows, gripper closed frames=0 | max XYZ=34.965691mm | old WM match=True
+[136/400] E00154.pkl: 59 frames, 11 windows, gripper closed frames=0 | max XYZ=38.559745mm | old WM match=True
+[137/400] E00155.pkl: 75 frames, 14 windows, gripper closed frames=26 | max XYZ=35.396014mm | old WM match=True
+[138/400] E00156.pkl: 56 frames, 10 windows, gripper closed frames=0 | max XYZ=35.306888mm | old WM match=True
+[139/400] E00157.pkl: 63 frames, 12 windows, gripper closed frames=0 | max XYZ=35.978017mm | old WM match=True
+[140/400] E00158.pkl: 88 frames, 17 windows, gripper closed frames=21 | max XYZ=34.953731mm | old WM match=True
+[141/400] E00159.pkl: 90 frames, 17 windows, gripper closed frames=0 | max XYZ=53.348067mm | old WM match=True
+[142/400] E00160.pkl: 45 frames, 8 windows, gripper closed frames=0 | max XYZ=42.436714mm | old WM match=True
+[143/400] E00162.pkl: 65 frames, 12 windows, gripper closed frames=11 | max XYZ=32.27466mm | old WM match=True
+[144/400] E00163.pkl: 69 frames, 13 windows, gripper closed frames=0 | max XYZ=31.482362mm | old WM match=True
+[145/400] E00164.pkl: 59 frames, 11 windows, gripper closed frames=15 | max XYZ=35.681993mm | old WM match=True
+[146/400] E00165.pkl: 75 frames, 14 windows, gripper closed frames=1 | max XYZ=39.204562mm | old WM match=True
+[147/400] E00166.pkl: 60 frames, 11 windows, gripper closed frames=33 | max XYZ=30.308457mm | old WM match=True
+[148/400] E00167.pkl: 68 frames, 13 windows, gripper closed frames=1 | max XYZ=40.221688mm | old WM match=True
+[149/400] E00168.pkl: 66 frames, 12 windows, gripper closed frames=0 | max XYZ=30.474919mm | old WM match=True
+[150/400] E00169.pkl: 53 frames, 10 windows, gripper closed frames=0 | max XYZ=33.537111mm | old WM match=True
+[151/400] E00170.pkl: 49 frames, 9 windows, gripper closed frames=0 | max XYZ=36.107035mm | old WM match=True
+[152/400] E00171.pkl: 66 frames, 12 windows, gripper closed frames=43 | max XYZ=31.741246mm | old WM match=True
+[153/400] E00172.pkl: 69 frames, 13 windows, gripper closed frames=34 | max XYZ=33.510654mm | old WM match=True
+[154/400] E00173.pkl: 86 frames, 16 windows, gripper closed frames=0 | max XYZ=32.635163mm | old WM match=True
+[155/400] E00174.pkl: 61 frames, 11 windows, gripper closed frames=0 | max XYZ=37.616211mm | old WM match=True
+[156/400] E00179.pkl: 39 frames, 7 windows, gripper closed frames=0 | max XYZ=33.499097mm | old WM match=True
+[157/400] E00180.pkl: 89 frames, 17 windows, gripper closed frames=1 | max XYZ=36.817372mm | old WM match=True
+[158/400] E00181.pkl: 50 frames, 9 windows, gripper closed frames=0 | max XYZ=32.520697mm | old WM match=True
+[159/400] E00182.pkl: 77 frames, 14 windows, gripper closed frames=0 | max XYZ=30.937794mm | old WM match=True
+[160/400] E00183.pkl: 55 frames, 10 windows, gripper closed frames=28 | max XYZ=33.239684mm | old WM match=True
+[161/400] E00184.pkl: 43 frames, 8 windows, gripper closed frames=0 | max XYZ=39.10715mm | old WM match=True
+[162/400] E00185.pkl: 47 frames, 8 windows, gripper closed frames=0 | max XYZ=36.07324mm | old WM match=True
+[163/400] E00186.pkl: 64 frames, 12 windows, gripper closed frames=49 | max XYZ=33.363287mm | old WM match=True
+[164/400] E00187.pkl: 65 frames, 12 windows, gripper closed frames=16 | max XYZ=36.400397mm | old WM match=True
+[165/400] E00188.pkl: 86 frames, 16 windows, gripper closed frames=0 | max XYZ=32.099189mm | old WM match=True
+[166/400] E00189.pkl: 40 frames, 7 windows, gripper closed frames=1 | max XYZ=31.703968mm | old WM match=True
+[167/400] E00190.pkl: 62 frames, 11 windows, gripper closed frames=0 | max XYZ=32.899219mm | old WM match=True
+[168/400] E00191.pkl: 48 frames, 9 windows, gripper closed frames=0 | max XYZ=28.065514mm | old WM match=True
+[169/400] E00192.pkl: 83 frames, 16 windows, gripper closed frames=1 | max XYZ=52.223988mm | old WM match=True
+[170/400] E00195.pkl: 73 frames, 14 windows, gripper closed frames=0 | max XYZ=29.996355mm | old WM match=True
+[171/400] E00196.pkl: 71 frames, 13 windows, gripper closed frames=0 | max XYZ=37.326274mm | old WM match=True
+[172/400] E00197.pkl: 59 frames, 11 windows, gripper closed frames=0 | max XYZ=36.66006mm | old WM match=True
+[173/400] E00198.pkl: 55 frames, 10 windows, gripper closed frames=0 | max XYZ=30.753375mm | old WM match=True
+[174/400] E00199.pkl: 79 frames, 15 windows, gripper closed frames=0 | max XYZ=65.65627mm | old WM match=True
+[175/400] E00200.pkl: 43 frames, 8 windows, gripper closed frames=0 | max XYZ=36.521313mm | old WM match=True
+[176/400] E00201.pkl: 83 frames, 16 windows, gripper closed frames=56 | max XYZ=36.254671mm | old WM match=True
+[177/400] E00202.pkl: 51 frames, 9 windows, gripper closed frames=40 | max XYZ=36.046401mm | old WM match=True
+[178/400] E00203.pkl: 53 frames, 10 windows, gripper closed frames=10 | max XYZ=31.025468mm | old WM match=True
+[179/400] E00204.pkl: 55 frames, 10 windows, gripper closed frames=0 | max XYZ=35.849518mm | old WM match=True
+[180/400] E00205.pkl: 70 frames, 13 windows, gripper closed frames=1 | max XYZ=33.011735mm | old WM match=True
+[181/400] E00206.pkl: 50 frames, 9 windows, gripper closed frames=0 | max XYZ=35.731456mm | old WM match=True
+[182/400] E00207.pkl: 43 frames, 8 windows, gripper closed frames=15 | max XYZ=30.53133mm | old WM match=True
+[183/400] E00208.pkl: 76 frames, 14 windows, gripper closed frames=0 | max XYZ=32.806345mm | old WM match=True
+[184/400] E00209.pkl: 61 frames, 11 windows, gripper closed frames=32 | max XYZ=33.78979mm | old WM match=True
+[185/400] E00210.pkl: 62 frames, 11 windows, gripper closed frames=27 | max XYZ=31.612128mm | old WM match=True
+[186/400] E00211.pkl: 95 frames, 18 windows, gripper closed frames=48 | max XYZ=33.512191mm | old WM match=True
+[187/400] E00212.pkl: 84 frames, 16 windows, gripper closed frames=0 | max XYZ=35.071811mm | old WM match=True
+[188/400] E00213.pkl: 61 frames, 11 windows, gripper closed frames=0 | max XYZ=33.988073mm | old WM match=True
+[189/400] E00214.pkl: 70 frames, 13 windows, gripper closed frames=1 | max XYZ=30.018431mm | old WM match=True
+[190/400] E00215.pkl: 89 frames, 17 windows, gripper closed frames=0 | max XYZ=37.046877mm | old WM match=True
+[191/400] E00216.pkl: 71 frames, 13 windows, gripper closed frames=10 | max XYZ=62.754987mm | old WM match=True
+[192/400] E00219.pkl: 59 frames, 11 windows, gripper closed frames=14 | max XYZ=34.83554mm | old WM match=True
+[193/400] E00220.pkl: 49 frames, 9 windows, gripper closed frames=23 | max XYZ=37.595892mm | old WM match=True
+[194/400] E00221.pkl: 54 frames, 10 windows, gripper closed frames=1 | max XYZ=33.920423mm | old WM match=True
+[195/400] E00222.pkl: 76 frames, 14 windows, gripper closed frames=0 | max XYZ=31.700656mm | old WM match=True
+[196/400] E00223.pkl: 83 frames, 16 windows, gripper closed frames=1 | max XYZ=40.58449mm | old WM match=True
+[197/400] E00224.pkl: 62 frames, 11 windows, gripper closed frames=0 | max XYZ=34.162143mm | old WM match=True
+[198/400] E00225.pkl: 85 frames, 16 windows, gripper closed frames=58 | max XYZ=34.938133mm | old WM match=True
+[199/400] E00226.pkl: 40 frames, 7 windows, gripper closed frames=15 | max XYZ=30.666336mm | old WM match=True
+[200/400] E00227.pkl: 46 frames, 8 windows, gripper closed frames=23 | max XYZ=30.874073mm | old WM match=True
+[201/400] E00228.pkl: 66 frames, 12 windows, gripper closed frames=1 | max XYZ=36.80527mm | old WM match=True
+[202/400] E00229.pkl: 55 frames, 10 windows, gripper closed frames=0 | max XYZ=31.663651mm | old WM match=True
+[203/400] E00230.pkl: 45 frames, 8 windows, gripper closed frames=0 | max XYZ=31.825111mm | old WM match=True
+[204/400] E00231.pkl: 69 frames, 13 windows, gripper closed frames=0 | max XYZ=33.807828mm | old WM match=True
+[205/400] E00232.pkl: 45 frames, 8 windows, gripper closed frames=10 | max XYZ=36.442707mm | old WM match=True
+[206/400] E00233.pkl: 60 frames, 11 windows, gripper closed frames=0 | max XYZ=33.021572mm | old WM match=True
+[207/400] E00234.pkl: 79 frames, 15 windows, gripper closed frames=0 | max XYZ=32.181469mm | old WM match=True
+[208/400] E00235.pkl: 65 frames, 12 windows, gripper closed frames=43 | max XYZ=34.250873mm | old WM match=True
+[209/400] E00236.pkl: 80 frames, 15 windows, gripper closed frames=27 | max XYZ=35.077457mm | old WM match=True
+[210/400] E00237.pkl: 47 frames, 8 windows, gripper closed frames=1 | max XYZ=35.180588mm | old WM match=True
+[211/400] E00238.pkl: 64 frames, 12 windows, gripper closed frames=33 | max XYZ=38.33015mm | old WM match=True
+[212/400] E00239.pkl: 81 frames, 15 windows, gripper closed frames=0 | max XYZ=37.745834mm | old WM match=True
+[213/400] E00242.pkl: 62 frames, 11 windows, gripper closed frames=45 | max XYZ=41.653003mm | old WM match=True
+[214/400] E00243.pkl: 69 frames, 13 windows, gripper closed frames=0 | max XYZ=36.131914mm | old WM match=True
+[215/400] E00244.pkl: 64 frames, 12 windows, gripper closed frames=0 | max XYZ=33.723467mm | old WM match=True
+[216/400] E00245.pkl: 71 frames, 13 windows, gripper closed frames=0 | max XYZ=35.925268mm | old WM match=True
+[217/400] E00246.pkl: 61 frames, 11 windows, gripper closed frames=0 | max XYZ=37.210186mm | old WM match=True
+[218/400] E00247.pkl: 62 frames, 11 windows, gripper closed frames=26 | max XYZ=34.565135mm | old WM match=True
+[219/400] E00248.pkl: 55 frames, 10 windows, gripper closed frames=0 | max XYZ=36.446085mm | old WM match=True
+[220/400] E00249.pkl: 60 frames, 11 windows, gripper closed frames=26 | max XYZ=33.514453mm | old WM match=True
+[221/400] E00250.pkl: 62 frames, 11 windows, gripper closed frames=44 | max XYZ=54.364094mm | old WM match=True
+[222/400] E00251.pkl: 80 frames, 15 windows, gripper closed frames=0 | max XYZ=34.209173mm | old WM match=True
+[223/400] E00252.pkl: 68 frames, 13 windows, gripper closed frames=0 | max XYZ=32.164416mm | old WM match=True
+[224/400] E00253.pkl: 76 frames, 14 windows, gripper closed frames=0 | max XYZ=66.213143mm | old WM match=True
+[225/400] E00254.pkl: 39 frames, 7 windows, gripper closed frames=0 | max XYZ=30.18977mm | old WM match=True
+[226/400] E00255.pkl: 59 frames, 11 windows, gripper closed frames=0 | max XYZ=32.302363mm | old WM match=True
+[227/400] E00256.pkl: 72 frames, 13 windows, gripper closed frames=0 | max XYZ=31.896036mm | old WM match=True
+[228/400] E00257.pkl: 66 frames, 12 windows, gripper closed frames=0 | max XYZ=64.057781mm | old WM match=True
+[229/400] E00258.pkl: 82 frames, 15 windows, gripper closed frames=42 | max XYZ=35.613512mm | old WM match=True
+[230/400] E00259.pkl: 73 frames, 14 windows, gripper closed frames=0 | max XYZ=38.103679mm | old WM match=True
+[231/400] E00260.pkl: 56 frames, 10 windows, gripper closed frames=16 | max XYZ=39.108183mm | old WM match=True
+[232/400] E00261.pkl: 70 frames, 13 windows, gripper closed frames=10 | max XYZ=33.541845mm | old WM match=True
+[233/400] E00262.pkl: 87 frames, 16 windows, gripper closed frames=23 | max XYZ=45.065019mm | old WM match=True
+[234/400] E00265.pkl: 55 frames, 10 windows, gripper closed frames=0 | max XYZ=41.045307mm | old WM match=True
+[235/400] E00266.pkl: 50 frames, 9 windows, gripper closed frames=0 | max XYZ=32.002867mm | old WM match=True
+[236/400] E00267.pkl: 77 frames, 14 windows, gripper closed frames=0 | max XYZ=44.478308mm | old WM match=True
+[237/400] E00268.pkl: 41 frames, 7 windows, gripper closed frames=0 | max XYZ=33.269706mm | old WM match=True
+[238/400] E00269.pkl: 69 frames, 13 windows, gripper closed frames=40 | max XYZ=40.690532mm | old WM match=True
+[239/400] E00270.pkl: 56 frames, 10 windows, gripper closed frames=34 | max XYZ=38.967782mm | old WM match=True
+[240/400] E00271.pkl: 68 frames, 13 windows, gripper closed frames=0 | max XYZ=38.171538mm | old WM match=True
+[241/400] E00272.pkl: 64 frames, 12 windows, gripper closed frames=0 | max XYZ=35.253353mm | old WM match=True
+[242/400] E00273.pkl: 55 frames, 10 windows, gripper closed frames=0 | max XYZ=32.699223mm | old WM match=True
+[243/400] E00274.pkl: 48 frames, 9 windows, gripper closed frames=0 | max XYZ=32.287365mm | old WM match=True
+[244/400] E00275.pkl: 66 frames, 12 windows, gripper closed frames=0 | max XYZ=33.718871mm | old WM match=True
+[245/400] E00276.pkl: 68 frames, 13 windows, gripper closed frames=24 | max XYZ=33.394652mm | old WM match=True
+[246/400] E00277.pkl: 57 frames, 10 windows, gripper closed frames=0 | max XYZ=38.762179mm | old WM match=True
+[247/400] E00278.pkl: 41 frames, 7 windows, gripper closed frames=25 | max XYZ=34.099832mm | old WM match=True
+[248/400] E00279.pkl: 37 frames, 6 windows, gripper closed frames=0 | max XYZ=35.710802mm | old WM match=True
+[249/400] E00280.pkl: 78 frames, 15 windows, gripper closed frames=0 | max XYZ=32.430036mm | old WM match=True
+[250/400] E00281.pkl: 71 frames, 13 windows, gripper closed frames=0 | max XYZ=37.097799mm | old WM match=True
+[251/400] E00282.pkl: 62 frames, 11 windows, gripper closed frames=0 | max XYZ=30.905648mm | old WM match=True
+[252/400] E00283.pkl: 52 frames, 9 windows, gripper closed frames=31 | max XYZ=32.476574mm | old WM match=True
+[253/400] E00284.pkl: 77 frames, 14 windows, gripper closed frames=0 | max XYZ=32.186148mm | old WM match=True
+[254/400] E00285.pkl: 43 frames, 8 windows, gripper closed frames=0 | max XYZ=34.994243mm | old WM match=True
+[255/400] E00286.pkl: 58 frames, 11 windows, gripper closed frames=0 | max XYZ=30.766283mm | old WM match=True
+[256/400] E00287.pkl: 70 frames, 13 windows, gripper closed frames=0 | max XYZ=34.166946mm | old WM match=True
+[257/400] E00288.pkl: 79 frames, 15 windows, gripper closed frames=8 | max XYZ=37.145226mm | old WM match=True
+[258/400] E00289.pkl: 82 frames, 15 windows, gripper closed frames=0 | max XYZ=33.480446mm | old WM match=True
+[259/400] E00290.pkl: 74 frames, 14 windows, gripper closed frames=16 | max XYZ=28.024472mm | old WM match=True
+[260/400] E00291.pkl: 65 frames, 12 windows, gripper closed frames=0 | max XYZ=32.094382mm | old WM match=True
+[261/400] E00292.pkl: 97 frames, 18 windows, gripper closed frames=0 | max XYZ=31.326438mm | old WM match=True
+[262/400] E00293.pkl: 40 frames, 7 windows, gripper closed frames=0 | max XYZ=32.887761mm | old WM match=True
+[263/400] E00294.pkl: 62 frames, 11 windows, gripper closed frames=0 | max XYZ=32.930823mm | old WM match=True
+[264/400] E00296.pkl: 95 frames, 18 windows, gripper closed frames=0 | max XYZ=33.360089mm | old WM match=True
+[265/400] E00297.pkl: 68 frames, 13 windows, gripper closed frames=0 | max XYZ=52.890221mm | old WM match=True
+[266/400] E00298.pkl: 81 frames, 15 windows, gripper closed frames=0 | max XYZ=35.261678mm | old WM match=True
+[267/400] E00299.pkl: 35 frames, 6 windows, gripper closed frames=0 | max XYZ=31.525624mm | old WM match=True
+[268/400] E00300.pkl: 42 frames, 7 windows, gripper closed frames=0 | max XYZ=35.68896mm | old WM match=True
+[269/400] E00301.pkl: 63 frames, 12 windows, gripper closed frames=0 | max XYZ=33.085014mm | old WM match=True
+[270/400] E00302.pkl: 42 frames, 7 windows, gripper closed frames=1 | max XYZ=30.659885mm | old WM match=True
+[271/400] E00303.pkl: 70 frames, 13 windows, gripper closed frames=0 | max XYZ=31.749873mm | old WM match=True
+[272/400] E00304.pkl: 55 frames, 10 windows, gripper closed frames=0 | max XYZ=33.091068mm | old WM match=True
+[273/400] E00305.pkl: 81 frames, 15 windows, gripper closed frames=0 | max XYZ=33.253354mm | old WM match=True
+[274/400] E00306.pkl: 46 frames, 8 windows, gripper closed frames=19 | max XYZ=33.380721mm | old WM match=True
+[275/400] E00307.pkl: 44 frames, 8 windows, gripper closed frames=18 | max XYZ=31.691275mm | old WM match=True
+[276/400] E00308.pkl: 80 frames, 15 windows, gripper closed frames=0 | max XYZ=65.534288mm | old WM match=True
+[277/400] E00310.pkl: 58 frames, 11 windows, gripper closed frames=0 | max XYZ=31.247746mm | old WM match=True
+[278/400] E00311.pkl: 68 frames, 13 windows, gripper closed frames=33 | max XYZ=30.51091mm | old WM match=True
+[279/400] E00312.pkl: 85 frames, 16 windows, gripper closed frames=0 | max XYZ=35.805458mm | old WM match=True
+[280/400] E00313.pkl: 107 frames, 20 windows, gripper closed frames=0 | max XYZ=36.699385mm | old WM match=True
+[281/400] E00314.pkl: 79 frames, 15 windows, gripper closed frames=0 | max XYZ=30.950095mm | old WM match=True
+[282/400] E00315.pkl: 54 frames, 10 windows, gripper closed frames=0 | max XYZ=32.520261mm | old WM match=True
+[283/400] E00316.pkl: 83 frames, 16 windows, gripper closed frames=65 | max XYZ=36.554223mm | old WM match=True
+[284/400] E00317.pkl: 81 frames, 15 windows, gripper closed frames=0 | max XYZ=32.695997mm | old WM match=True
+[285/400] E00318.pkl: 59 frames, 11 windows, gripper closed frames=9 | max XYZ=36.416172mm | old WM match=True
+[286/400] E00319.pkl: 51 frames, 9 windows, gripper closed frames=0 | max XYZ=32.734509mm | old WM match=True
+[287/400] E00320.pkl: 47 frames, 8 windows, gripper closed frames=0 | max XYZ=32.99242mm | old WM match=True
+[288/400] E00321.pkl: 73 frames, 14 windows, gripper closed frames=19 | max XYZ=34.062904mm | old WM match=True
+[289/400] E00322.pkl: 60 frames, 11 windows, gripper closed frames=53 | max XYZ=34.616913mm | old WM match=True
+[290/400] E00323.pkl: 58 frames, 11 windows, gripper closed frames=44 | max XYZ=34.960082mm | old WM match=True
+[291/400] E00324.pkl: 59 frames, 11 windows, gripper closed frames=6 | max XYZ=36.520888mm | old WM match=True
+[292/400] E00325.pkl: 43 frames, 8 windows, gripper closed frames=1 | max XYZ=34.666337mm | old WM match=True
+[293/400] E00326.pkl: 78 frames, 15 windows, gripper closed frames=0 | max XYZ=33.113689mm | old WM match=True
+[294/400] E00327.pkl: 53 frames, 10 windows, gripper closed frames=31 | max XYZ=33.883333mm | old WM match=True
+[295/400] E00328.pkl: 54 frames, 10 windows, gripper closed frames=1 | max XYZ=32.305527mm | old WM match=True
+[296/400] E00329.pkl: 69 frames, 13 windows, gripper closed frames=1 | max XYZ=32.123737mm | old WM match=True
+[297/400] E00330.pkl: 70 frames, 13 windows, gripper closed frames=0 | max XYZ=35.015032mm | old WM match=True
+[298/400] E00331.pkl: 50 frames, 9 windows, gripper closed frames=0 | max XYZ=32.964257mm | old WM match=True
+[299/400] E00332.pkl: 82 frames, 15 windows, gripper closed frames=0 | max XYZ=59.654999mm | old WM match=True
+[300/400] E00335.pkl: 65 frames, 12 windows, gripper closed frames=51 | max XYZ=33.615479mm | old WM match=True
+[301/400] E00336.pkl: 67 frames, 12 windows, gripper closed frames=54 | max XYZ=33.843375mm | old WM match=True
+[302/400] E00337.pkl: 43 frames, 8 windows, gripper closed frames=0 | max XYZ=34.49523mm | old WM match=True
+[303/400] E00338.pkl: 63 frames, 12 windows, gripper closed frames=0 | max XYZ=35.937449mm | old WM match=True
+[304/400] E00339.pkl: 46 frames, 8 windows, gripper closed frames=0 | max XYZ=41.679042mm | old WM match=True
+[305/400] E00340.pkl: 62 frames, 11 windows, gripper closed frames=0 | max XYZ=41.65442mm | old WM match=True
+[306/400] E00341.pkl: 72 frames, 13 windows, gripper closed frames=1 | max XYZ=35.460492mm | old WM match=True
+[307/400] E00342.pkl: 57 frames, 10 windows, gripper closed frames=15 | max XYZ=32.231639mm | old WM match=True
+[308/400] E00343.pkl: 49 frames, 9 windows, gripper closed frames=0 | max XYZ=39.89504mm | old WM match=True
+[309/400] E00344.pkl: 66 frames, 12 windows, gripper closed frames=0 | max XYZ=32.995215mm | old WM match=True
+[310/400] E00345.pkl: 61 frames, 11 windows, gripper closed frames=0 | max XYZ=37.640703mm | old WM match=True
+[311/400] E00346.pkl: 39 frames, 7 windows, gripper closed frames=29 | max XYZ=33.133877mm | old WM match=True
+[312/400] E00347.pkl: 67 frames, 12 windows, gripper closed frames=0 | max XYZ=30.746747mm | old WM match=True
+[313/400] E00348.pkl: 83 frames, 16 windows, gripper closed frames=19 | max XYZ=31.185937mm | old WM match=True
+[314/400] E00349.pkl: 64 frames, 12 windows, gripper closed frames=0 | max XYZ=48.21365mm | old WM match=True
+[315/400] E00351.pkl: 67 frames, 12 windows, gripper closed frames=1 | max XYZ=32.611798mm | old WM match=True
+[316/400] E00352.pkl: 58 frames, 11 windows, gripper closed frames=0 | max XYZ=33.495263mm | old WM match=True
+[317/400] E00353.pkl: 51 frames, 9 windows, gripper closed frames=1 | max XYZ=32.83953mm | old WM match=True
+[318/400] E00354.pkl: 47 frames, 8 windows, gripper closed frames=29 | max XYZ=32.207303mm | old WM match=True
+[319/400] E00355.pkl: 54 frames, 10 windows, gripper closed frames=0 | max XYZ=31.264254mm | old WM match=True
+[320/400] E00356.pkl: 83 frames, 16 windows, gripper closed frames=73 | max XYZ=32.502997mm | old WM match=True
+[321/400] E00357.pkl: 66 frames, 12 windows, gripper closed frames=0 | max XYZ=35.668269mm | old WM match=True
+[322/400] E00358.pkl: 73 frames, 14 windows, gripper closed frames=1 | max XYZ=34.378497mm | old WM match=True
+[323/400] E00359.pkl: 58 frames, 11 windows, gripper closed frames=0 | max XYZ=36.390231mm | old WM match=True
+[324/400] E00360.pkl: 76 frames, 14 windows, gripper closed frames=44 | max XYZ=32.986246mm | old WM match=True
+[325/400] E00361.pkl: 59 frames, 11 windows, gripper closed frames=0 | max XYZ=30.293284mm | old WM match=True
+[326/400] E00362.pkl: 63 frames, 12 windows, gripper closed frames=16 | max XYZ=36.815613mm | old WM match=True
+[327/400] E00363.pkl: 74 frames, 14 windows, gripper closed frames=16 | max XYZ=34.672273mm | old WM match=True
+[328/400] E00364.pkl: 43 frames, 8 windows, gripper closed frames=22 | max XYZ=32.9059mm | old WM match=True
+[329/400] E00365.pkl: 73 frames, 14 windows, gripper closed frames=39 | max XYZ=33.05525mm | old WM match=True
+[330/400] E00366.pkl: 57 frames, 10 windows, gripper closed frames=0 | max XYZ=38.272301mm | old WM match=True
+[331/400] E00367.pkl: 57 frames, 10 windows, gripper closed frames=43 | max XYZ=33.92277mm | old WM match=True
+[332/400] E00368.pkl: 41 frames, 7 windows, gripper closed frames=0 | max XYZ=35.478936mm | old WM match=True
+[333/400] E00369.pkl: 53 frames, 10 windows, gripper closed frames=14 | max XYZ=31.782408mm | old WM match=True
+[334/400] E00370.pkl: 50 frames, 9 windows, gripper closed frames=34 | max XYZ=38.580099mm | old WM match=True
+[335/400] E00371.pkl: 45 frames, 8 windows, gripper closed frames=40 | max XYZ=35.902675mm | old WM match=True
+[336/400] E00372.pkl: 56 frames, 10 windows, gripper closed frames=0 | max XYZ=35.541099mm | old WM match=True
+[337/400] E00373.pkl: 27 frames, 4 windows, gripper closed frames=0 | max XYZ=30.255978mm | old WM match=True
+[338/400] E00374.pkl: 71 frames, 13 windows, gripper closed frames=40 | max XYZ=28.387045mm | old WM match=True
+[339/400] E00375.pkl: 70 frames, 13 windows, gripper closed frames=30 | max XYZ=35.515499mm | old WM match=True
+[340/400] E00376.pkl: 65 frames, 12 windows, gripper closed frames=0 | max XYZ=32.970457mm | old WM match=True
+[341/400] E00377.pkl: 61 frames, 11 windows, gripper closed frames=0 | max XYZ=62.615364mm | old WM match=True
+[342/400] E00378.pkl: 52 frames, 9 windows, gripper closed frames=1 | max XYZ=57.103296mm | old WM match=True
+[343/400] E00379.pkl: 63 frames, 12 windows, gripper closed frames=39 | max XYZ=45.806869mm | old WM match=True
+[344/400] E00380.pkl: 67 frames, 12 windows, gripper closed frames=12 | max XYZ=34.629786mm | old WM match=True
+[345/400] E00381.pkl: 81 frames, 15 windows, gripper closed frames=35 | max XYZ=43.153599mm | old WM match=True
+[346/400] E00382.pkl: 58 frames, 11 windows, gripper closed frames=0 | max XYZ=38.257326mm | old WM match=True
+[347/400] E00383.pkl: 63 frames, 12 windows, gripper closed frames=0 | max XYZ=31.382308mm | old WM match=True
+[348/400] E00384.pkl: 66 frames, 12 windows, gripper closed frames=0 | max XYZ=30.316093mm | old WM match=True
+[349/400] E00385.pkl: 64 frames, 12 windows, gripper closed frames=0 | max XYZ=36.598219mm | old WM match=True
+[350/400] E00386.pkl: 84 frames, 16 windows, gripper closed frames=55 | max XYZ=39.561524mm | old WM match=True
+[351/400] E00387.pkl: 91 frames, 17 windows, gripper closed frames=0 | max XYZ=36.225308mm | old WM match=True
+[352/400] E00388.pkl: 39 frames, 7 windows, gripper closed frames=1 | max XYZ=34.06634mm | old WM match=True
+[353/400] E00389.pkl: 76 frames, 14 windows, gripper closed frames=0 | max XYZ=36.934932mm | old WM match=True
+[354/400] E00390.pkl: 78 frames, 15 windows, gripper closed frames=15 | max XYZ=34.41585mm | old WM match=True
+[355/400] E00391.pkl: 65 frames, 12 windows, gripper closed frames=0 | max XYZ=34.22695mm | old WM match=True
+[356/400] E00392.pkl: 73 frames, 14 windows, gripper closed frames=0 | max XYZ=37.81382mm | old WM match=True
+[357/400] E00393.pkl: 45 frames, 8 windows, gripper closed frames=1 | max XYZ=35.862517mm | old WM match=True
+[358/400] E00394.pkl: 72 frames, 13 windows, gripper closed frames=55 | max XYZ=62.365071mm | old WM match=True
+[359/400] E00395.pkl: 53 frames, 10 windows, gripper closed frames=1 | max XYZ=44.210072mm | old WM match=True
+[360/400] E00396.pkl: 55 frames, 10 windows, gripper closed frames=0 | max XYZ=48.776721mm | old WM match=True
+[361/400] E00398.pkl: 53 frames, 10 windows, gripper closed frames=41 | max XYZ=31.707066mm | old WM match=True
+[362/400] E00399.pkl: 60 frames, 11 windows, gripper closed frames=0 | max XYZ=35.417676mm | old WM match=True
+[363/400] E00400.pkl: 68 frames, 13 windows, gripper closed frames=0 | max XYZ=34.672554mm | old WM match=True
+[364/400] E00401.pkl: 50 frames, 9 windows, gripper closed frames=0 | max XYZ=29.857624mm | old WM match=True
+[365/400] E00402.pkl: 81 frames, 15 windows, gripper closed frames=0 | max XYZ=39.064883mm | old WM match=True
+[366/400] E00403.pkl: 73 frames, 14 windows, gripper closed frames=55 | max XYZ=32.521951mm | old WM match=True
+[367/400] E00404.pkl: 71 frames, 13 windows, gripper closed frames=58 | max XYZ=32.210798mm | old WM match=True
+[368/400] E00405.pkl: 66 frames, 12 windows, gripper closed frames=20 | max XYZ=34.268703mm | old WM match=True
+[369/400] E00406.pkl: 71 frames, 13 windows, gripper closed frames=0 | max XYZ=31.283989mm | old WM match=True
+[370/400] E00407.pkl: 65 frames, 12 windows, gripper closed frames=1 | max XYZ=37.052509mm | old WM match=True
+[371/400] E00408.pkl: 75 frames, 14 windows, gripper closed frames=0 | max XYZ=45.483062mm | old WM match=True
+[372/400] E00409.pkl: 55 frames, 10 windows, gripper closed frames=42 | max XYZ=47.057595mm | old WM match=True
+[373/400] E00412.pkl: 61 frames, 11 windows, gripper closed frames=0 | max XYZ=40.162432mm | old WM match=True
+[374/400] E00413.pkl: 63 frames, 12 windows, gripper closed frames=0 | max XYZ=34.719334mm | old WM match=True
+[375/400] E00414.pkl: 58 frames, 11 windows, gripper closed frames=26 | max XYZ=34.394824mm | old WM match=True
+[376/400] E00415.pkl: 60 frames, 11 windows, gripper closed frames=0 | max XYZ=36.604886mm | old WM match=True
+[377/400] E00416.pkl: 82 frames, 15 windows, gripper closed frames=56 | max XYZ=33.265942mm | old WM match=True
+[378/400] E00417.pkl: 64 frames, 12 windows, gripper closed frames=15 | max XYZ=32.890321mm | old WM match=True
+[379/400] E00418.pkl: 94 frames, 18 windows, gripper closed frames=40 | max XYZ=36.552584mm | old WM match=True
+[380/400] E00419.pkl: 44 frames, 8 windows, gripper closed frames=39 | max XYZ=32.005643mm | old WM match=True
+[381/400] E00420.pkl: 51 frames, 9 windows, gripper closed frames=1 | max XYZ=31.385486mm | old WM match=True
+[382/400] E00421.pkl: 51 frames, 9 windows, gripper closed frames=0 | max XYZ=67.941875mm | old WM match=True
+[383/400] E00422.pkl: 70 frames, 13 windows, gripper closed frames=0 | max XYZ=57.035111mm | old WM match=True
+[384/400] E00423.pkl: 60 frames, 11 windows, gripper closed frames=0 | max XYZ=45.700966mm | old WM match=True
+[385/400] E00424.pkl: 42 frames, 7 windows, gripper closed frames=0 | max XYZ=68.609316mm | old WM match=True
+[386/400] E00425.pkl: 75 frames, 14 windows, gripper closed frames=0 | max XYZ=44.386885mm | old WM match=True
+[387/400] E00427.pkl: 68 frames, 13 windows, gripper closed frames=42 | max XYZ=33.444072mm | old WM match=True
+[388/400] E00428.pkl: 56 frames, 10 windows, gripper closed frames=35 | max XYZ=47.963733mm | old WM match=True
+[389/400] E00429.pkl: 92 frames, 17 windows, gripper closed frames=0 | max XYZ=38.226865mm | old WM match=True
+[390/400] E00430.pkl: 75 frames, 14 windows, gripper closed frames=0 | max XYZ=39.344075mm | old WM match=True
+[391/400] E00431.pkl: 75 frames, 14 windows, gripper closed frames=0 | max XYZ=31.900426mm | old WM match=True
+[392/400] E00432.pkl: 72 frames, 13 windows, gripper closed frames=25 | max XYZ=37.384718mm | old WM match=True
+[393/400] E00433.pkl: 36 frames, 6 windows, gripper closed frames=0 | max XYZ=32.405316mm | old WM match=True
+[394/400] E00434.pkl: 67 frames, 12 windows, gripper closed frames=0 | max XYZ=33.557936mm | old WM match=True
+[395/400] E00435.pkl: 46 frames, 8 windows, gripper closed frames=0 | max XYZ=36.946113mm | old WM match=True
+[396/400] E00436.pkl: 90 frames, 17 windows, gripper closed frames=0 | max XYZ=34.263745mm | old WM match=True
+[397/400] E00437.pkl: 75 frames, 14 windows, gripper closed frames=43 | max XYZ=36.097642mm | old WM match=True
+[398/400] E00438.pkl: 77 frames, 14 windows, gripper closed frames=22 | max XYZ=34.654867mm | old WM match=True
+[399/400] E00439.pkl: 53 frames, 10 windows, gripper closed frames=0 | max XYZ=32.938957mm | old WM match=True
+[400/400] E00440.pkl: 65 frames, 12 windows, gripper closed frames=0 | max XYZ=35.713517mm | old WM match=True
+DONE: 400 episodes; 25481 frames; 25081 observed transitions; 400 synthetic terminal OPEN labels. Writes=False

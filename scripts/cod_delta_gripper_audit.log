@@ -1,0 +1,38 @@
+Exception raised during import
+
+[cod_epoch_100_wrist_clean] COD trajectories: 28
+  [1/28] task_01/traj_000.pkl: OK MISSING_TERMINAL_OPEN_COMMAND_INFO
+  [15/28] task_09/traj_000.pkl: OK 
+  summary: {'OK': 28}
+
+[cod_finetuning_no_wrist_clean] COD trajectories: 38
+  [1/38] task_00/traj_000.pkl: OK 
+  [13/38] task_05/traj_004.pkl: REVIEW SLOW_CLOSE_FEEDBACK
+  [15/38] task_06/traj_003.pkl: OK 
+  [30/38] task_12/traj_002.pkl: OK 
+  summary: {'OK': 37, 'REVIEW': 1}
+
+[reference] 720 canonical VLA-JEPA files
+  reference processed 1/720
+  reference processed 100/720
+  reference processed 200/720
+  reference processed 300/720
+  reference processed 400/720
+  reference processed 500/720
+  reference processed 600/720
+  reference processed 700/720
+
+=== FINAL COD SUMMARY ===
+cod_epoch_100_wrist_clean: {'OK': 28}
+  xyz mm   p50=28.348 p95=38.999 max=54.080
+  rot deg  p50=1.244 p95=7.228 max=9.525
+cod_finetuning_no_wrist_clean: {'OK': 37, 'REVIEW': 1}
+  xyz mm   p50=28.243 p95=37.722 max=47.275
+  rot deg  p50=0.919 p95=1.709 max=2.488
+REFERENCE:
+  scripted: n=240 xyz_p95_mm=22.172 rot_p95_deg=0.081
+  tfrecord: n=480 xyz_p95_mm=34.248 rot_p95_deg=5.018
+Reports saved in: /mnt/beegfs/a.cuciniello9/datasets/cod_delta_gripper_audit
+  summary.json, per_trajectory.csv, per_transition.csv,
+  gripper_events.csv, flagged_trajectories.csv
+NO INPUT PKL/JSON WAS MODIFIED.

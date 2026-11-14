@@ -7,7 +7,7 @@ output_root: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/a
 # Ogni directory deve contenere config.json e model.safetensors.
 pretrained_paths:
   E1: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E1/checkpoint_A
-  E2: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E2/checkpoint_B
+  E2: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E2/checkpoint_A
   E3: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E3/checkpoint_A
   E4: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E4/checkpoint_A
 

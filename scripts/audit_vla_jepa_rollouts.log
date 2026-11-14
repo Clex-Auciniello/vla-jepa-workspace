@@ -1,0 +1,75 @@
+Exception raised during import
+
+[E1] PKL files: 64
+  [9/64] E1/task_02/traj_001.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  counts: {'pkls': 64, 'not_111': 38, 'success_111': 26, 'audited_OK': 25, 'audited_REVIEW': 1}
+
+[E1_onepass] PKL files: 64
+  [10/64] E1_onepass/task_02/traj_002.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  [16/64] E1_onepass/task_03/traj_004.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  [20/64] E1_onepass/task_04/traj_004.pkl: OK 
+  [31/64] E1_onepass/task_07/traj_003.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  [60/64] E1_onepass/task_14/traj_004.pkl: OK 
+  counts: {'pkls': 64, 'not_111': 35, 'success_111': 29, 'audited_OK': 26, 'audited_REVIEW': 3}
+
+[E2] PKL files: 64
+  [1/64] E2/task_00/traj_001.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  [22/64] E2/task_05/traj_002.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  [46/64] E2/task_11/traj_002.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  [53/64] E2/task_13/traj_001.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  counts: {'pkls': 64, 'success_111': 34, 'audited_REVIEW': 4, 'not_111': 30, 'audited_OK': 30}
+
+[E2_onepass] PKL files: 64
+  [1/64] E2_onepass/task_00/traj_001.pkl: OK 
+  [3/64] E2_onepass/task_00/traj_003.pkl: REVIEW NON_01_OBSERVED_GRIPPER;RAW_CMD_CLOSE_TRANSITIONS_NOT_1
+  [19/64] E2_onepass/task_04/traj_003.pkl: ERROR ValueError: Trajectory has less than 2 frames
+  [20/64] E2_onepass/task_04/traj_004.pkl: OK 
+  counts: {'pkls': 64, 'success_111': 33, 'audited_OK': 31, 'audited_REVIEW': 1, 'not_111': 31, 'audited_ERROR': 1}
+
+[E3] PKL files: 64
+  [20/64] E3/task_04/traj_004.pkl: OK 
+  [60/64] E3/task_14/traj_004.pkl: OK 
+  counts: {'pkls': 64, 'not_111': 39, 'success_111': 25, 'audited_OK': 25}
+
+[E4] PKL files: 64
+  [1/64] E4/task_00/traj_001.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  [9/64] E4/task_02/traj_001.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  [11/64] E4/task_02/traj_003.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  [20/64] E4/task_04/traj_004.pkl: OK 
+  [22/64] E4/task_05/traj_002.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  [34/64] E4/task_08/traj_002.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  [38/64] E4/task_09/traj_002.pkl: REVIEW NON_01_OBSERVED_GRIPPER
+  [40/64] E4/task_09/traj_004.pkl: OK 
+  counts: {'pkls': 64, 'success_111': 42, 'audited_REVIEW': 6, 'audited_OK': 36, 'not_111': 22}
+
+[reference] 720 canonical files
+  reference 1/720
+  reference 100/720
+  reference 200/720
+  reference 300/720
+  reference 400/720
+  reference 500/720
+  reference 600/720
+  reference 700/720
+  reference 720/720
+
+=== VLA-JEPA ROLLOUT SUMMARY ===
+E1: PKL=64 JSON_1/1/1=26 OK=25 REVIEW=1 ERROR=0
+  observed XYZ p95=27.97 mm, rot p95=1.33 deg
+E1_onepass: PKL=64 JSON_1/1/1=29 OK=26 REVIEW=3 ERROR=0
+  observed XYZ p95=27.62 mm, rot p95=1.33 deg
+E2: PKL=64 JSON_1/1/1=34 OK=30 REVIEW=4 ERROR=0
+  observed XYZ p95=28.01 mm, rot p95=1.36 deg
+E2_onepass: PKL=64 JSON_1/1/1=33 OK=31 REVIEW=1 ERROR=1
+  observed XYZ p95=28.42 mm, rot p95=1.36 deg
+E3: PKL=64 JSON_1/1/1=25 OK=25 REVIEW=0 ERROR=0
+  observed XYZ p95=28.11 mm, rot p95=1.32 deg
+E4: PKL=64 JSON_1/1/1=42 OK=36 REVIEW=6 ERROR=0
+  observed XYZ p95=27.86 mm, rot p95=1.34 deg
+reference scripted: n=240 XYZ p95=22.17 mm, rot p95=0.08 deg
+reference tfrecord: n=480 XYZ p95=34.25 mm, rot p95=5.02 deg
+Reports: /mnt/beegfs/a.cuciniello9/datasets/vla_jepa_rollouts_audit
+  summary.json, schema_samples.json, all_rollouts.csv,
+  successful_111_audit.csv, flagged_successful_111.csv,
+  successful_111_paths.txt, delta_transitions.csv, gripper_events.csv
+NO INPUT PKL/JSON WAS MODIFIED.

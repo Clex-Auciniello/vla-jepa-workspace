@@ -1,0 +1,90 @@
+Modo: EXECUTE
+Sorgente E: /mnt/beegfs/a.cuciniello9/datasets/robotic/exploration_preprocessed
+Sorgente P: /mnt/beegfs/a.cuciniello9/datasets/robotic/plays_preprocessed
+Destinazione: /mnt/beegfs/a.cuciniello9/datasets/mixture/robotic_wm_only
+Selezionati 33 E + 48 P = 81 PKL; 4011 frame. Salti XYZ esclusi: 11.
+Preflight OK: tutti i PKL sorgenti esistono, hash e selezione validi.
+[01/81] E00014.pkl exploration 100 frames | copied
+[02/81] E00015.pkl exploration  56 frames | copied
+[03/81] E00016.pkl exploration  88 frames | copied
+[04/81] E00017.pkl exploration  64 frames | copied
+[05/81] E00018.pkl exploration  56 frames | copied
+[06/81] E00019.pkl exploration  72 frames | copied
+[07/81] E00020.pkl exploration  57 frames | copied
+[08/81] E00021.pkl exploration  56 frames | copied
+[09/81] E00022.pkl exploration  68 frames | copied
+[10/81] E00023.pkl exploration  60 frames | copied
+[11/81] E00024.pkl exploration  46 frames | copied
+[12/81] E00025.pkl exploration  80 frames | copied
+[13/81] E00071.pkl exploration  59 frames | copied
+[14/81] E00113.pkl exploration  73 frames | copied
+[15/81] E00126.pkl exploration  54 frames | copied
+[16/81] E00127.pkl exploration  90 frames | copied
+[17/81] E00175.pkl exploration  64 frames | copied
+[18/81] E00176.pkl exploration  62 frames | copied
+[19/81] E00177.pkl exploration  65 frames | copied
+[20/81] E00178.pkl exploration  75 frames | copied
+[21/81] E00193.pkl exploration  38 frames | copied
+[22/81] E00194.pkl exploration  46 frames | copied
+[23/81] E00217.pkl exploration  61 frames | copied
+[24/81] E00218.pkl exploration  48 frames | copied
+[25/81] E00263.pkl exploration  87 frames | copied
+[26/81] E00264.pkl exploration  42 frames | copied
+[27/81] E00295.pkl exploration  79 frames | copied
+[28/81] E00333.pkl exploration  64 frames | copied
+[29/81] E00334.pkl exploration  42 frames | copied
+[30/81] E00350.pkl exploration  93 frames | copied
+[31/81] E00410.pkl exploration  64 frames | copied
+[32/81] E00411.pkl exploration  41 frames | copied
+[33/81] E00426.pkl exploration  72 frames | copied
+[34/81] P00005.pkl plays        35 frames | copied
+[35/81] P00027.pkl plays        36 frames | copied
+[36/81] P00028.pkl plays        50 frames | copied
+[37/81] P00029.pkl plays        43 frames | copied
+[38/81] P00030.pkl plays        43 frames | copied
+[39/81] P00041.pkl plays        35 frames | copied
+[40/81] P00042.pkl plays        38 frames | copied
+[41/81] P00043.pkl plays        49 frames | copied
+[42/81] P00044.pkl plays        34 frames | copied
+[43/81] P00045.pkl plays        34 frames | copied
+[44/81] P00046.pkl plays        41 frames | copied
+[45/81] P00047.pkl plays        35 frames | copied
+[46/81] P00048.pkl plays        54 frames | copied
+[47/81] P00049.pkl plays        38 frames | copied
+[48/81] P00050.pkl plays        50 frames | copied
+[49/81] P00085.pkl plays        43 frames | copied
+[50/81] P00086.pkl plays        46 frames | copied
+[51/81] P00087.pkl plays        31 frames | copied
+[52/81] P00088.pkl plays        38 frames | copied
+[53/81] P00089.pkl plays        38 frames | copied
+[54/81] P00090.pkl plays        44 frames | copied
+[55/81] P00091.pkl plays        31 frames | copied
+[56/81] P00092.pkl plays        30 frames | copied
+[57/81] P00093.pkl plays        30 frames | copied
+[58/81] P00094.pkl plays        45 frames | copied
+[59/81] P00095.pkl plays        44 frames | copied
+[60/81] P00096.pkl plays        35 frames | copied
+[61/81] P00097.pkl plays        41 frames | copied
+[62/81] P00106.pkl plays        36 frames | copied
+[63/81] P00107.pkl plays        51 frames | copied
+[64/81] P00108.pkl plays        40 frames | copied
+[65/81] P00109.pkl plays        49 frames | copied
+[66/81] P00110.pkl plays        36 frames | copied
+[67/81] P00127.pkl plays        48 frames | copied
+[68/81] P00132.pkl plays        34 frames | copied
+[69/81] P00133.pkl plays        44 frames | copied
+[70/81] P00134.pkl plays        49 frames | copied
+[71/81] P00135.pkl plays        37 frames | copied
+[72/81] P00136.pkl plays        41 frames | copied
+[73/81] P00161.pkl plays        37 frames | copied
+[74/81] P00162.pkl plays        35 frames | copied
+[75/81] P00163.pkl plays        32 frames | copied
+[76/81] P00164.pkl plays        35 frames | copied
+[77/81] P00165.pkl plays        38 frames | copied
+[78/81] P00166.pkl plays        34 frames | copied
+[79/81] P00180.pkl plays        34 frames | copied
+[80/81] P00181.pkl plays        34 frames | copied
+[81/81] P00182.pkl plays        34 frames | copied
+Manifest scritto: /mnt/beegfs/a.cuciniello9/datasets/mixture/robotic_wm_only/manifest.csv
+Summary scritto: /mnt/beegfs/a.cuciniello9/datasets/mixture/robotic_wm_only/summary.json
+Completato: {'copied': 81}

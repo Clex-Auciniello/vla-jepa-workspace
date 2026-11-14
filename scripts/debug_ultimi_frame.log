@@ -1,0 +1,29 @@
+Exception raised during import
+COD: 66 traiettorie selezionate dal manifest
+OSVI-AWDA: 191 traiettorie selezionate dal manifest
+VLA-JEPA: 187 traiettorie selezionate dal manifest
+[025/444] OK  COD/task_06/traj_001.pkl
+[050/444] OK  COD/task_12/traj_001.pkl
+[075/444] OK  OSVI-AWDA/task_01/traj_007.pkl
+[100/444] OK  OSVI-AWDA/task_03/traj_005.pkl
+[125/444] OK  OSVI-AWDA/task_05/traj_004.pkl
+[150/444] OK  OSVI-AWDA/task_07/traj_012.pkl
+[175/444] OK  OSVI-AWDA/task_10/traj_003.pkl
+[200/444] OK  OSVI-AWDA/task_12/traj_003.pkl
+[225/444] OK  OSVI-AWDA/task_13/traj_012.pkl
+[250/444] OK  OSVI-AWDA/task_15/traj_004.pkl
+[275/444] OK  VLA-JEPA/task_01/traj_003.pkl
+[300/444] OK  VLA-JEPA/task_03/traj_009.pkl
+[325/444] OK  VLA-JEPA/task_05/traj_008.pkl
+[350/444] OK  VLA-JEPA/task_07/traj_006.pkl
+[375/444] OK  VLA-JEPA/task_10/traj_000.pkl
+[400/444] OK  VLA-JEPA/task_12/traj_003.pkl
+[425/444] OK  VLA-JEPA/task_14/traj_004.pkl
+[444/444] OK  VLA-JEPA/task_15/traj_011.pkl
+
+=== AUDIT ULTIMI FRAME ===
+Elaborate: 444 / 444; errori: 0
+Per dataset: {'COD': 66, 'OSVI-AWDA': 191, 'VLA-JEPA': 187}
+Apri: /mnt/beegfs/a.cuciniello9/datasets/mixture/debug_ultimi_frame/index.html
+Inventario: /mnt/beegfs/a.cuciniello9/datasets/mixture/debug_ultimi_frame/index.csv
+Nessun input preprocessato modificato.

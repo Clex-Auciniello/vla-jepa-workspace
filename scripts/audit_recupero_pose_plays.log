@@ -1,0 +1,290 @@
+Exception raised during import
+Exception raised during import
+[1/190] P00001.pkl healthy: joint_max=0.1061 rad command_motion=767.3 mm target-vs-EEF median=7.0 mm
+[2/190] P00002.pkl healthy: joint_max=0.0980 rad command_motion=657.0 mm target-vs-EEF median=5.9 mm
+[3/190] P00003.pkl healthy: joint_max=0.1156 rad command_motion=652.0 mm target-vs-EEF median=6.2 mm
+[4/190] P00004.pkl healthy: joint_max=0.0637 rad command_motion=596.0 mm target-vs-EEF median=7.4 mm
+[5/190] P00005.pkl eef_static: joint_max=0.1012 rad command_motion=654.7 mm target-vs-EEF median=264.0 mm
+[6/190] P00006.pkl healthy: joint_max=0.0859 rad command_motion=650.2 mm target-vs-EEF median=5.3 mm
+[7/190] P00007.pkl healthy: joint_max=0.1062 rad command_motion=766.2 mm target-vs-EEF median=5.6 mm
+[8/190] P00008.pkl healthy: joint_max=0.1013 rad command_motion=551.6 mm target-vs-EEF median=8.0 mm
+[9/190] P00009.pkl healthy: joint_max=0.1095 rad command_motion=672.2 mm target-vs-EEF median=5.6 mm
+[10/190] P00010.pkl healthy: joint_max=0.1125 rad command_motion=799.6 mm target-vs-EEF median=7.3 mm
+[11/190] P00011.pkl healthy: joint_max=0.1328 rad command_motion=914.0 mm target-vs-EEF median=6.0 mm
+[12/190] P00012.pkl healthy: joint_max=0.0812 rad command_motion=811.2 mm target-vs-EEF median=6.0 mm
+[13/190] P00013.pkl healthy: joint_max=0.0700 rad command_motion=927.9 mm target-vs-EEF median=7.2 mm
+[14/190] P00014.pkl healthy: joint_max=0.1358 rad command_motion=757.6 mm target-vs-EEF median=6.9 mm
+[15/190] P00015.pkl healthy: joint_max=0.0803 rad command_motion=683.8 mm target-vs-EEF median=6.2 mm
+[16/190] P00016.pkl healthy: joint_max=0.1344 rad command_motion=719.2 mm target-vs-EEF median=7.4 mm
+[17/190] P00017.pkl healthy: joint_max=0.0922 rad command_motion=637.9 mm target-vs-EEF median=6.2 mm
+[18/190] P00018.pkl healthy: joint_max=0.0975 rad command_motion=611.4 mm target-vs-EEF median=6.5 mm
+[19/190] P00019.pkl healthy: joint_max=0.1019 rad command_motion=703.1 mm target-vs-EEF median=6.7 mm
+[20/190] P00020.pkl healthy: joint_max=0.1035 rad command_motion=937.8 mm target-vs-EEF median=4.8 mm
+[21/190] P00021.pkl healthy: joint_max=0.1238 rad command_motion=802.7 mm target-vs-EEF median=4.4 mm
+[22/190] P00022.pkl healthy: joint_max=0.1110 rad command_motion=972.7 mm target-vs-EEF median=6.8 mm
+[23/190] P00023.pkl healthy: joint_max=0.1348 rad command_motion=979.0 mm target-vs-EEF median=5.5 mm
+[24/190] P00024.pkl healthy: joint_max=0.1256 rad command_motion=618.9 mm target-vs-EEF median=5.3 mm
+[25/190] P00025.pkl healthy: joint_max=0.0853 rad command_motion=714.8 mm target-vs-EEF median=16.5 mm
+[26/190] P00026.pkl healthy: joint_max=0.1003 rad command_motion=590.7 mm target-vs-EEF median=12.0 mm
+[27/190] P00027.pkl eef_static: joint_max=0.0959 rad command_motion=669.3 mm target-vs-EEF median=258.4 mm
+[28/190] P00028.pkl eef_static: joint_max=0.1163 rad command_motion=948.1 mm target-vs-EEF median=231.9 mm
+[29/190] P00029.pkl eef_static: joint_max=0.0715 rad command_motion=811.5 mm target-vs-EEF median=292.2 mm
+[30/190] P00030.pkl eef_static: joint_max=0.0921 rad command_motion=822.1 mm target-vs-EEF median=341.3 mm
+[31/190] P00031.pkl healthy: joint_max=0.1013 rad command_motion=904.2 mm target-vs-EEF median=7.0 mm
+[32/190] P00032.pkl healthy: joint_max=0.0903 rad command_motion=726.1 mm target-vs-EEF median=5.6 mm
+[33/190] P00033.pkl healthy: joint_max=0.1249 rad command_motion=711.6 mm target-vs-EEF median=4.6 mm
+[34/190] P00034.pkl healthy: joint_max=0.2436 rad command_motion=670.4 mm target-vs-EEF median=4.3 mm
+[35/190] P00035.pkl healthy: joint_max=0.3594 rad command_motion=683.9 mm target-vs-EEF median=5.6 mm
+[36/190] P00036.pkl healthy: joint_max=0.0865 rad command_motion=743.3 mm target-vs-EEF median=5.0 mm
+[37/190] P00037.pkl healthy: joint_max=0.4828 rad command_motion=659.6 mm target-vs-EEF median=7.5 mm
+[38/190] P00038.pkl healthy: joint_max=0.3977 rad command_motion=799.5 mm target-vs-EEF median=5.7 mm
+[39/190] P00039.pkl healthy: joint_max=0.0890 rad command_motion=811.4 mm target-vs-EEF median=6.4 mm
+[40/190] P00040.pkl jump_gt_100mm: joint_max=0.4922 rad command_motion=835.1 mm target-vs-EEF median=26.6 mm
+[41/190] P00041.pkl eef_static: joint_max=0.3181 rad command_motion=640.5 mm target-vs-EEF median=488.1 mm
+[42/190] P00042.pkl eef_static: joint_max=0.5179 rad command_motion=698.1 mm target-vs-EEF median=258.6 mm
+[43/190] P00043.pkl eef_static: joint_max=0.3503 rad command_motion=897.6 mm target-vs-EEF median=258.0 mm
+[44/190] P00044.pkl eef_static: joint_max=0.2458 rad command_motion=613.6 mm target-vs-EEF median=251.8 mm
+[45/190] P00045.pkl eef_static: joint_max=0.1320 rad command_motion=616.0 mm target-vs-EEF median=343.0 mm
+[46/190] P00046.pkl eef_static: joint_max=0.1360 rad command_motion=744.2 mm target-vs-EEF median=234.8 mm
+[47/190] P00047.pkl eef_static: joint_max=0.1492 rad command_motion=627.9 mm target-vs-EEF median=312.8 mm
+[48/190] P00048.pkl eef_static: joint_max=0.3254 rad command_motion=1012.1 mm target-vs-EEF median=290.2 mm
+[49/190] P00049.pkl eef_static: joint_max=0.3036 rad command_motion=688.2 mm target-vs-EEF median=356.1 mm
+[50/190] P00050.pkl eef_static: joint_max=0.1293 rad command_motion=927.6 mm target-vs-EEF median=280.8 mm
+[51/190] P00051.pkl healthy: joint_max=0.4294 rad command_motion=774.0 mm target-vs-EEF median=7.2 mm
+[52/190] P00052.pkl healthy: joint_max=0.2379 rad command_motion=714.8 mm target-vs-EEF median=6.0 mm
+[53/190] P00053.pkl healthy: joint_max=0.3034 rad command_motion=800.5 mm target-vs-EEF median=6.4 mm
+[54/190] P00054.pkl healthy: joint_max=0.2452 rad command_motion=754.8 mm target-vs-EEF median=5.9 mm
+[55/190] P00055.pkl healthy: joint_max=0.1546 rad command_motion=619.7 mm target-vs-EEF median=5.6 mm
+[56/190] P00056.pkl healthy: joint_max=0.0965 rad command_motion=954.2 mm target-vs-EEF median=7.1 mm
+[57/190] P00057.pkl healthy: joint_max=0.3296 rad command_motion=679.3 mm target-vs-EEF median=6.3 mm
+[58/190] P00058.pkl healthy: joint_max=0.3736 rad command_motion=633.2 mm target-vs-EEF median=5.1 mm
+[59/190] P00059.pkl healthy: joint_max=0.2670 rad command_motion=742.1 mm target-vs-EEF median=37.3 mm
+[60/190] P00060.pkl healthy: joint_max=0.3455 rad command_motion=676.4 mm target-vs-EEF median=8.2 mm
+[61/190] P00061.pkl healthy: joint_max=0.3482 rad command_motion=726.7 mm target-vs-EEF median=5.1 mm
+[62/190] P00062.pkl healthy: joint_max=0.5110 rad command_motion=926.2 mm target-vs-EEF median=6.2 mm
+[63/190] P00063.pkl healthy: joint_max=0.5036 rad command_motion=685.9 mm target-vs-EEF median=6.2 mm
+[64/190] P00064.pkl healthy: joint_max=0.3851 rad command_motion=672.3 mm target-vs-EEF median=4.6 mm
+[65/190] P00065.pkl healthy: joint_max=0.3262 rad command_motion=679.6 mm target-vs-EEF median=5.6 mm
+[66/190] P00066.pkl healthy: joint_max=0.1015 rad command_motion=399.8 mm target-vs-EEF median=4.1 mm
+[67/190] P00067.pkl healthy: joint_max=0.0979 rad command_motion=338.6 mm target-vs-EEF median=6.2 mm
+[68/190] P00068.pkl healthy: joint_max=0.0631 rad command_motion=346.7 mm target-vs-EEF median=7.3 mm
+[69/190] P00069.pkl healthy: joint_max=0.0968 rad command_motion=343.1 mm target-vs-EEF median=4.9 mm
+[70/190] P00070.pkl healthy: joint_max=0.1139 rad command_motion=443.6 mm target-vs-EEF median=7.0 mm
+[71/190] P00071.pkl healthy: joint_max=0.1967 rad command_motion=302.3 mm target-vs-EEF median=8.5 mm
+[72/190] P00072.pkl healthy: joint_max=0.1006 rad command_motion=342.6 mm target-vs-EEF median=3.8 mm
+[73/190] P00073.pkl healthy: joint_max=0.0588 rad command_motion=373.4 mm target-vs-EEF median=8.3 mm
+[74/190] P00074.pkl healthy: joint_max=0.0898 rad command_motion=462.4 mm target-vs-EEF median=6.1 mm
+[75/190] P00075.pkl healthy: joint_max=0.1054 rad command_motion=378.4 mm target-vs-EEF median=7.2 mm
+[76/190] P00076.pkl healthy: joint_max=0.0869 rad command_motion=346.8 mm target-vs-EEF median=6.5 mm
+[77/190] P00077.pkl jump_gt_100mm: joint_max=0.0566 rad command_motion=392.0 mm target-vs-EEF median=38.3 mm
+[78/190] P00078.pkl healthy: joint_max=0.1392 rad command_motion=405.0 mm target-vs-EEF median=5.5 mm
+[79/190] P00079.pkl healthy: joint_max=0.0953 rad command_motion=359.4 mm target-vs-EEF median=6.0 mm
+[80/190] P00080.pkl healthy: joint_max=0.0840 rad command_motion=349.3 mm target-vs-EEF median=7.5 mm
+[81/190] P00081.pkl healthy: joint_max=0.0851 rad command_motion=383.9 mm target-vs-EEF median=4.7 mm
+[82/190] P00082.pkl healthy: joint_max=0.1037 rad command_motion=583.5 mm target-vs-EEF median=5.3 mm
+[83/190] P00083.pkl healthy: joint_max=0.1049 rad command_motion=636.7 mm target-vs-EEF median=6.9 mm
+[84/190] P00084.pkl healthy: joint_max=0.1075 rad command_motion=851.4 mm target-vs-EEF median=5.7 mm
+[85/190] P00085.pkl eef_static: joint_max=0.1368 rad command_motion=821.6 mm target-vs-EEF median=249.0 mm
+[86/190] P00086.pkl eef_static: joint_max=0.1289 rad command_motion=876.3 mm target-vs-EEF median=397.3 mm
+[87/190] P00087.pkl eef_static: joint_max=0.0705 rad command_motion=557.4 mm target-vs-EEF median=340.9 mm
+[88/190] P00088.pkl eef_static: joint_max=0.1223 rad command_motion=709.4 mm target-vs-EEF median=477.3 mm
+[89/190] P00089.pkl eef_static: joint_max=0.1152 rad command_motion=705.4 mm target-vs-EEF median=245.6 mm
+[90/190] P00090.pkl eef_static: joint_max=0.0982 rad command_motion=826.3 mm target-vs-EEF median=426.9 mm
+[91/190] P00091.pkl eef_static: joint_max=0.1102 rad command_motion=575.0 mm target-vs-EEF median=410.9 mm
+[92/190] P00092.pkl eef_static: joint_max=0.1034 rad command_motion=566.0 mm target-vs-EEF median=364.4 mm
+[93/190] P00093.pkl eef_static: joint_max=0.0677 rad command_motion=552.2 mm target-vs-EEF median=159.7 mm
+[94/190] P00094.pkl eef_static: joint_max=0.0849 rad command_motion=851.3 mm target-vs-EEF median=393.2 mm
+[95/190] P00095.pkl eef_static: joint_max=0.1140 rad command_motion=841.2 mm target-vs-EEF median=371.5 mm
+[96/190] P00096.pkl eef_static: joint_max=0.0924 rad command_motion=637.4 mm target-vs-EEF median=532.8 mm
+[97/190] P00097.pkl eef_static: joint_max=0.1179 rad command_motion=774.4 mm target-vs-EEF median=446.6 mm
+[98/190] P00098.pkl healthy: joint_max=0.1038 rad command_motion=757.7 mm target-vs-EEF median=5.9 mm
+[99/190] P00099.pkl healthy: joint_max=0.0682 rad command_motion=673.5 mm target-vs-EEF median=7.1 mm
+[100/190] P00100.pkl healthy: joint_max=0.1179 rad command_motion=711.6 mm target-vs-EEF median=4.9 mm
+[101/190] P00101.pkl healthy: joint_max=0.1553 rad command_motion=725.6 mm target-vs-EEF median=6.3 mm
+[102/190] P00102.pkl healthy: joint_max=0.1379 rad command_motion=865.8 mm target-vs-EEF median=6.4 mm
+[103/190] P00103.pkl healthy: joint_max=0.1748 rad command_motion=893.2 mm target-vs-EEF median=6.7 mm
+[104/190] P00104.pkl healthy: joint_max=0.0740 rad command_motion=898.7 mm target-vs-EEF median=6.9 mm
+[105/190] P00105.pkl healthy: joint_max=0.1565 rad command_motion=945.0 mm target-vs-EEF median=13.5 mm
+[106/190] P00106.pkl eef_static: joint_max=0.1493 rad command_motion=664.0 mm target-vs-EEF median=508.1 mm
+[107/190] P00107.pkl eef_static: joint_max=0.1533 rad command_motion=979.4 mm target-vs-EEF median=329.1 mm
+[108/190] P00108.pkl eef_static: joint_max=0.1294 rad command_motion=750.6 mm target-vs-EEF median=357.9 mm
+[109/190] P00109.pkl eef_static: joint_max=0.1480 rad command_motion=932.2 mm target-vs-EEF median=308.2 mm
+[110/190] P00110.pkl eef_static: joint_max=0.0916 rad command_motion=679.5 mm target-vs-EEF median=383.2 mm
+[111/190] P00111.pkl healthy: joint_max=0.1321 rad command_motion=976.8 mm target-vs-EEF median=6.7 mm
+[112/190] P00112.pkl healthy: joint_max=0.1689 rad command_motion=678.8 mm target-vs-EEF median=7.6 mm
+[113/190] P00113.pkl healthy: joint_max=0.1775 rad command_motion=921.5 mm target-vs-EEF median=6.4 mm
+[114/190] P00114.pkl healthy: joint_max=0.1450 rad command_motion=664.0 mm target-vs-EEF median=5.9 mm
+[115/190] P00115.pkl healthy: joint_max=0.1333 rad command_motion=862.9 mm target-vs-EEF median=5.5 mm
+[116/190] P00116.pkl healthy: joint_max=0.1087 rad command_motion=669.5 mm target-vs-EEF median=6.4 mm
+[117/190] P00117.pkl healthy: joint_max=0.1039 rad command_motion=827.7 mm target-vs-EEF median=6.2 mm
+[118/190] P00118.pkl healthy: joint_max=0.1119 rad command_motion=686.3 mm target-vs-EEF median=7.3 mm
+[119/190] P00119.pkl healthy: joint_max=0.1097 rad command_motion=971.8 mm target-vs-EEF median=6.3 mm
+[120/190] P00120.pkl healthy: joint_max=0.1648 rad command_motion=651.7 mm target-vs-EEF median=6.8 mm
+[121/190] P00121.pkl healthy: joint_max=0.1395 rad command_motion=1085.2 mm target-vs-EEF median=5.7 mm
+[122/190] P00122.pkl healthy: joint_max=0.1438 rad command_motion=635.8 mm target-vs-EEF median=6.9 mm
+[123/190] P00123.pkl healthy: joint_max=0.1306 rad command_motion=847.0 mm target-vs-EEF median=9.3 mm
+[124/190] P00124.pkl healthy: joint_max=0.1047 rad command_motion=681.9 mm target-vs-EEF median=28.8 mm
+[125/190] P00125.pkl healthy: joint_max=0.1102 rad command_motion=719.2 mm target-vs-EEF median=18.1 mm
+[126/190] P00126.pkl jump_gt_100mm: joint_max=0.0918 rad command_motion=698.2 mm target-vs-EEF median=20.9 mm
+[127/190] P00127.pkl eef_static: joint_max=0.1328 rad command_motion=899.4 mm target-vs-EEF median=331.6 mm
+[128/190] P00128.pkl healthy: joint_max=0.1499 rad command_motion=677.0 mm target-vs-EEF median=7.5 mm
+[129/190] P00129.pkl healthy: joint_max=0.1597 rad command_motion=750.2 mm target-vs-EEF median=6.7 mm
+[130/190] P00130.pkl healthy: joint_max=0.1339 rad command_motion=715.4 mm target-vs-EEF median=6.8 mm
+[131/190] P00131.pkl healthy: joint_max=0.1348 rad command_motion=853.3 mm target-vs-EEF median=6.7 mm
+[132/190] P00132.pkl eef_static: joint_max=0.1445 rad command_motion=645.4 mm target-vs-EEF median=566.5 mm
+[133/190] P00133.pkl eef_static: joint_max=0.1221 rad command_motion=823.1 mm target-vs-EEF median=468.8 mm
+[134/190] P00134.pkl eef_static: joint_max=0.1316 rad command_motion=930.9 mm target-vs-EEF median=416.5 mm
+[135/190] P00135.pkl eef_static: joint_max=0.1448 rad command_motion=696.4 mm target-vs-EEF median=495.0 mm
+[136/190] P00136.pkl eef_static: joint_max=0.1689 rad command_motion=766.4 mm target-vs-EEF median=457.8 mm
+[137/190] P00137.pkl healthy: joint_max=0.1615 rad command_motion=670.7 mm target-vs-EEF median=7.0 mm
+[138/190] P00138.pkl healthy: joint_max=0.0928 rad command_motion=603.2 mm target-vs-EEF median=8.8 mm
+[139/190] P00139.pkl healthy: joint_max=0.0810 rad command_motion=599.4 mm target-vs-EEF median=6.0 mm
+[140/190] P00140.pkl healthy: joint_max=0.0847 rad command_motion=592.1 mm target-vs-EEF median=6.9 mm
+[141/190] P00141.pkl healthy: joint_max=0.0921 rad command_motion=598.5 mm target-vs-EEF median=8.3 mm
+[142/190] P00142.pkl healthy: joint_max=0.0823 rad command_motion=596.3 mm target-vs-EEF median=7.2 mm
+[143/190] P00143.pkl healthy: joint_max=0.1464 rad command_motion=602.8 mm target-vs-EEF median=7.1 mm
+[144/190] P00144.pkl healthy: joint_max=0.1142 rad command_motion=609.4 mm target-vs-EEF median=7.9 mm
+[145/190] P00145.pkl jump_gt_100mm: joint_max=0.0828 rad command_motion=596.4 mm target-vs-EEF median=25.6 mm
+[146/190] P00146.pkl healthy: joint_max=0.1067 rad command_motion=604.5 mm target-vs-EEF median=16.5 mm
+[147/190] P00147.pkl healthy: joint_max=0.0683 rad command_motion=599.3 mm target-vs-EEF median=7.9 mm
+[148/190] P00148.pkl healthy: joint_max=0.1283 rad command_motion=595.8 mm target-vs-EEF median=7.6 mm
+[149/190] P00149.pkl healthy: joint_max=0.1157 rad command_motion=590.7 mm target-vs-EEF median=7.6 mm
+[150/190] P00150.pkl healthy: joint_max=0.0795 rad command_motion=597.5 mm target-vs-EEF median=7.8 mm
+[151/190] P00151.pkl healthy: joint_max=0.0901 rad command_motion=587.9 mm target-vs-EEF median=8.4 mm
+[152/190] P00152.pkl healthy: joint_max=0.0936 rad command_motion=590.7 mm target-vs-EEF median=6.0 mm
+[153/190] P00153.pkl healthy: joint_max=0.0767 rad command_motion=602.5 mm target-vs-EEF median=6.8 mm
+[154/190] P00154.pkl healthy: joint_max=0.1491 rad command_motion=601.7 mm target-vs-EEF median=8.6 mm
+[155/190] P00155.pkl healthy: joint_max=0.0892 rad command_motion=605.1 mm target-vs-EEF median=7.1 mm
+[156/190] P00156.pkl healthy: joint_max=0.0715 rad command_motion=604.4 mm target-vs-EEF median=7.6 mm
+[157/190] P00157.pkl healthy: joint_max=0.0840 rad command_motion=607.2 mm target-vs-EEF median=8.8 mm
+[158/190] P00158.pkl healthy: joint_max=0.0834 rad command_motion=600.4 mm target-vs-EEF median=5.8 mm
+[159/190] P00159.pkl healthy: joint_max=0.1600 rad command_motion=597.5 mm target-vs-EEF median=6.7 mm
+[160/190] P00160.pkl healthy: joint_max=0.3512 rad command_motion=597.0 mm target-vs-EEF median=21.0 mm
+[161/190] P00161.pkl eef_static: joint_max=0.5319 rad command_motion=657.7 mm target-vs-EEF median=365.6 mm
+[162/190] P00162.pkl eef_static: joint_max=0.2621 rad command_motion=623.9 mm target-vs-EEF median=158.9 mm
+[163/190] P00163.pkl eef_static: joint_max=0.5061 rad command_motion=574.2 mm target-vs-EEF median=163.3 mm
+[164/190] P00164.pkl eef_static: joint_max=0.5113 rad command_motion=629.7 mm target-vs-EEF median=183.5 mm
+[165/190] P00165.pkl eef_static: joint_max=0.3485 rad command_motion=689.4 mm target-vs-EEF median=315.2 mm
+[166/190] P00166.pkl eef_static: joint_max=0.1552 rad command_motion=612.5 mm target-vs-EEF median=161.7 mm
+[167/190] P00167.pkl healthy: joint_max=0.5209 rad command_motion=573.9 mm target-vs-EEF median=6.8 mm
+[168/190] P00168.pkl healthy: joint_max=0.5096 rad command_motion=626.1 mm target-vs-EEF median=5.3 mm
+[169/190] P00169.pkl healthy: joint_max=0.3347 rad command_motion=684.1 mm target-vs-EEF median=6.2 mm
+[170/190] P00170.pkl healthy: joint_max=0.5028 rad command_motion=649.2 mm target-vs-EEF median=7.9 mm
+[171/190] P00171.pkl healthy: joint_max=0.3415 rad command_motion=627.6 mm target-vs-EEF median=5.2 mm
+[172/190] P00172.pkl healthy: joint_max=0.3384 rad command_motion=737.0 mm target-vs-EEF median=5.8 mm
+[173/190] P00173.pkl healthy: joint_max=0.3367 rad command_motion=741.6 mm target-vs-EEF median=5.7 mm
+[174/190] P00174.pkl healthy: joint_max=0.5189 rad command_motion=632.9 mm target-vs-EEF median=5.3 mm
+[175/190] P00175.pkl healthy: joint_max=0.4248 rad command_motion=630.7 mm target-vs-EEF median=5.8 mm
+[176/190] P00176.pkl healthy: joint_max=0.5151 rad command_motion=632.1 mm target-vs-EEF median=6.1 mm
+[177/190] P00177.pkl healthy: joint_max=0.5130 rad command_motion=678.6 mm target-vs-EEF median=5.2 mm
+[178/190] P00178.pkl healthy: joint_max=0.4515 rad command_motion=668.5 mm target-vs-EEF median=7.0 mm
+[179/190] P00179.pkl healthy: joint_max=0.5185 rad command_motion=837.8 mm target-vs-EEF median=6.7 mm
+[180/190] P00180.pkl eef_static: joint_max=0.5215 rad command_motion=610.7 mm target-vs-EEF median=280.9 mm
+[181/190] P00181.pkl eef_static: joint_max=0.4855 rad command_motion=621.4 mm target-vs-EEF median=313.5 mm
+[182/190] P00182.pkl eef_static: joint_max=0.4697 rad command_motion=604.1 mm target-vs-EEF median=374.5 mm
+[183/190] P00183.pkl healthy: joint_max=0.4524 rad command_motion=591.0 mm target-vs-EEF median=7.1 mm
+[184/190] P00184.pkl healthy: joint_max=0.3568 rad command_motion=676.9 mm target-vs-EEF median=7.0 mm
+[185/190] P00185.pkl healthy: joint_max=0.3490 rad command_motion=626.3 mm target-vs-EEF median=5.8 mm
+[186/190] P00186.pkl healthy: joint_max=0.5331 rad command_motion=641.4 mm target-vs-EEF median=8.8 mm
+[187/190] P00187.pkl healthy: joint_max=0.3548 rad command_motion=690.2 mm target-vs-EEF median=4.5 mm
+[188/190] P00188.pkl healthy: joint_max=0.2622 rad command_motion=562.6 mm target-vs-EEF median=5.6 mm
+[189/190] P00189.pkl healthy: joint_max=0.3390 rad command_motion=664.6 mm target-vs-EEF median=7.4 mm
+[190/190] P00190.pkl healthy: joint_max=0.5369 rad command_motion=601.6 mm target-vs-EEF median=6.1 mm
+
+SUMMARY:
+{
+  "root": "/mnt/beegfs/a.cuciniello9/datasets/robotic/plays_trajectories",
+  "total": 190,
+  "ok": 190,
+  "errors": [],
+  "categories": {
+    "healthy": 138,
+    "eef_static": 48,
+    "jump_gt_100mm": 4
+  },
+  "validation": {
+    "healthy": {
+      "pos_error_mm": {
+        "n": 5027,
+        "median": 6.497816278144771,
+        "p95": 13.836852474689499,
+        "max": 79.87342506911739
+      },
+      "rot_error_deg": {
+        "n": 5027,
+        "median": 0.7572680078089012,
+        "p95": 1.3385201581822863,
+        "max": 20.210093371277885
+      },
+      "xyz_delta_error_mm": {
+        "n": 4889,
+        "median": 8.00961144028157,
+        "p95": 17.549412140492745,
+        "max": 60.04701997729401
+      },
+      "rot_delta_error_deg": {
+        "n": 4889,
+        "median": 0.9537977201041463,
+        "p95": 1.8468342146697594,
+        "max": 13.30671007977201
+      }
+    },
+    "eef_static": {
+      "pos_error_mm": {
+        "n": 1889,
+        "median": 354.7001804387998,
+        "p95": 603.5227209598755,
+        "max": 708.7765663483589
+      },
+      "rot_error_deg": {
+        "n": 1889,
+        "median": 0.6660484421495869,
+        "p95": 29.85544215741345,
+        "max": 30.271054254904723
+      },
+      "xyz_delta_error_mm": {
+        "n": 1841,
+        "median": 20.664372316116985,
+        "p95": 22.303520604427252,
+        "max": 24.728624132722512
+      },
+      "rot_delta_error_deg": {
+        "n": 1841,
+        "median": 0.0,
+        "p95": 7.95474687932907e-15,
+        "max": 29.999999999999993
+      }
+    },
+    "jump_gt_100mm": {
+      "pos_error_mm": {
+        "n": 136,
+        "median": 24.98453561276228,
+        "p95": 81.55615574701747,
+        "max": 502.967034470198
+      },
+      "rot_error_deg": {
+        "n": 136,
+        "median": 0.6998286454019924,
+        "p95": 1.2749360909128205,
+        "max": 2.768631605526694
+      },
+      "xyz_delta_error_mm": {
+        "n": 132,
+        "median": 17.937544389419326,
+        "p95": 54.63762846828753,
+        "max": 314.94314800379215
+      },
+      "rot_delta_error_deg": {
+        "n": 132,
+        "median": 0.6479508531309351,
+        "p95": 1.6243580041319665,
+        "max": 3.3917396665728448
+      }
+    }
+  },
+  "static_with_joint_motion": 48,
+  "static_with_command_motion": 48,
+  "static_with_nonzero_command_rotation": 19
+}
+
+File di audit: /mnt/beegfs/a.cuciniello9/datasets/robotic/plays_pose_recovery_audit. PKL originali non modificati.

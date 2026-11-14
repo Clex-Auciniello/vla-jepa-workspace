@@ -49,7 +49,7 @@ def inizializza_policy(cfg, pretrained_path, local_rank):
     c.use_relative_actions = False
     c.pre_snap_gripper_action = False
     c.binarize_gripper_action = False
-    c.clip_normalized_actions = True
+    c.clip_normalized_actions = False
     c.normalization_mapping = {
         "VISUAL": NormalizationMode.IDENTITY,
         "STATE": NormalizationMode.MEAN_STD,  # Nessuno stato fornito alla policy.

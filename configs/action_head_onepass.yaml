@@ -1,0 +1,26 @@
+# Tutti gli esperimenti condividono dataset, split e iperparametri.
+dataset_root: /mnt/beegfs/a.cuciniello9/datasets/robotic/vla_jepa_offline_merged
+split_manifest: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/action_head/shared_split_1plus1.json
+output_root: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/action_head_onepass
+
+# Inserire qui i 4 checkpoint ottenuti dal continued WM pretraining.
+# Ogni directory deve contenere config.json e model.safetensors.
+pretrained_paths:
+  E1: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/exploration_1_epoch
+  E2: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/plays_1_epoch
+  E3: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E3/checkpoint_A
+  E4: /mnt/beegfs/a.cuciniello9/vla-jepa/vla-jepa-workspace/checkpoints/E4/checkpoint_A
+
+seed: 1000
+val_tfrecord: 1
+val_scripted: 1             # Validazione: 2 traiettorie per task, una per origine.
+batch_size: 3              # Per GPU: 3 x 4 GPU = 12 task per microbatch globale.
+grad_accum: 2              # Due microbatch = 24 osservazioni, 2 per task/step.
+epochs: 30
+learning_rate: 0.0001
+weight_decay: 1.0e-8
+warmup_steps: 500
+min_learning_rate: 1.0e-6
+grad_clip_norm: 1.0
+repeated_diffusion_steps: 8
+log_every: 20

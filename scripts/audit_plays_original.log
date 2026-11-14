@@ -1,0 +1,240 @@
+Exception raised during import
+Exception raised during import
+[1/190] P00001.pkl OK | T=41 | type=02 | ΔXYZ max=31.04mm | terminal qpos=0.0978 | final=True
+[2/190] P00002.pkl OK | T=36 | type=02 | ΔXYZ max=31.22mm | terminal qpos=0.0978 | final=True
+[3/190] P00003.pkl OK | T=35 | type=02 | ΔXYZ max=33.74mm | terminal qpos=0.0978 | final=True
+[4/190] P00004.pkl OK | T=33 | type=02 | ΔXYZ max=34.50mm | terminal qpos=0.0978 | final=True
+[5/190] P00005.pkl OK | T=35 | type=02 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[6/190] P00006.pkl OK | T=35 | type=02 | ΔXYZ max=35.58mm | terminal qpos=0.0978 | final=True
+[7/190] P00007.pkl OK | T=41 | type=02 | ΔXYZ max=35.25mm | terminal qpos=0.0978 | final=True
+[8/190] P00008.pkl OK | T=30 | type=02 | ΔXYZ max=35.31mm | terminal qpos=0.0978 | final=True
+[9/190] P00009.pkl OK | T=36 | type=02 | ΔXYZ max=29.93mm | terminal qpos=0.0978 | final=True
+[10/190] P00010.pkl OK | T=42 | type=02 | ΔXYZ max=38.62mm | terminal qpos=0.0978 | final=True
+[11/190] P00011.pkl OK | T=49 | type=02 | ΔXYZ max=30.50mm | terminal qpos=0.0978 | final=True
+[12/190] P00012.pkl OK | T=43 | type=02 | ΔXYZ max=40.31mm | terminal qpos=0.0978 | final=True
+[13/190] P00013.pkl OK | T=49 | type=02 | ΔXYZ max=34.65mm | terminal qpos=0.0978 | final=True
+[14/190] P00014.pkl OK | T=40 | type=02 | ΔXYZ max=37.37mm | terminal qpos=0.0978 | final=True
+[15/190] P00015.pkl OK | T=37 | type=02 | ΔXYZ max=33.04mm | terminal qpos=0.0978 | final=True
+[16/190] P00016.pkl OK | T=38 | type=02 | ΔXYZ max=40.25mm | terminal qpos=0.0978 | final=True
+[17/190] P00017.pkl OK | T=34 | type=02 | ΔXYZ max=38.07mm | terminal qpos=0.0978 | final=True
+[18/190] P00018.pkl OK | T=33 | type=02 | ΔXYZ max=28.11mm | terminal qpos=0.0978 | final=True
+[19/190] P00019.pkl OK | T=38 | type=02 | ΔXYZ max=31.07mm | terminal qpos=0.0978 | final=True
+[20/190] P00020.pkl OK | T=50 | type=02 | ΔXYZ max=35.94mm | terminal qpos=0.0978 | final=True
+[21/190] P00021.pkl OK | T=43 | type=02 | ΔXYZ max=31.51mm | terminal qpos=0.0978 | final=True
+[22/190] P00022.pkl OK | T=51 | type=02 | ΔXYZ max=31.90mm | terminal qpos=0.0978 | final=True
+[23/190] P00023.pkl OK | T=52 | type=02 | ΔXYZ max=30.87mm | terminal qpos=0.0978 | final=True
+[24/190] P00024.pkl OK | T=33 | type=02 | ΔXYZ max=28.55mm | terminal qpos=0.0978 | final=True
+[25/190] P00025.pkl OK | T=39 | type=02 | ΔXYZ max=46.77mm | terminal qpos=0.0978 | final=True
+[26/190] P00026.pkl OK | T=32 | type=02 | ΔXYZ max=81.61mm | terminal qpos=0.0978 | final=True
+[27/190] P00027.pkl OK | T=36 | type=02 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[28/190] P00028.pkl OK | T=50 | type=02 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[29/190] P00029.pkl OK | T=43 | type=02 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[30/190] P00030.pkl OK | T=43 | type=02 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[31/190] P00031.pkl OK | T=48 | type=02 | ΔXYZ max=37.56mm | terminal qpos=0.0978 | final=True
+[32/190] P00032.pkl OK | T=38 | type=02 | ΔXYZ max=32.84mm | terminal qpos=0.0978 | final=True
+[33/190] P00033.pkl OK | T=38 | type=02 | ΔXYZ max=29.45mm | terminal qpos=0.0978 | final=True
+[34/190] P00034.pkl OK | T=37 | type=03 | ΔXYZ max=32.91mm | terminal qpos=0.0978 | final=True
+[35/190] P00035.pkl OK | T=38 | type=03 | ΔXYZ max=32.43mm | terminal qpos=0.0978 | final=True
+[36/190] P00036.pkl OK | T=40 | type=03 | ΔXYZ max=31.25mm | terminal qpos=0.0978 | final=True
+[37/190] P00037.pkl OK | T=36 | type=03 | ΔXYZ max=36.85mm | terminal qpos=0.0978 | final=True
+[38/190] P00038.pkl OK | T=44 | type=03 | ΔXYZ max=30.18mm | terminal qpos=0.0978 | final=True
+[39/190] P00039.pkl OK | T=44 | type=03 | ΔXYZ max=31.73mm | terminal qpos=0.0978 | final=True
+[40/190] P00040.pkl OK | T=45 | type=03 | ΔXYZ max=154.52mm | terminal qpos=0.0978 | final=True
+[41/190] P00041.pkl OK | T=35 | type=03 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[42/190] P00042.pkl OK | T=38 | type=03 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[43/190] P00043.pkl OK | T=49 | type=03 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[44/190] P00044.pkl OK | T=34 | type=03 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[45/190] P00045.pkl OK | T=34 | type=03 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[46/190] P00046.pkl OK | T=41 | type=03 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[47/190] P00047.pkl OK | T=35 | type=03 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[48/190] P00048.pkl OK | T=54 | type=03 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[49/190] P00049.pkl OK | T=38 | type=03 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[50/190] P00050.pkl OK | T=50 | type=03 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[51/190] P00051.pkl OK | T=43 | type=03 | ΔXYZ max=29.31mm | terminal qpos=0.0978 | final=True
+[52/190] P00052.pkl OK | T=40 | type=03 | ΔXYZ max=28.61mm | terminal qpos=0.0978 | final=True
+[53/190] P00053.pkl OK | T=44 | type=03 | ΔXYZ max=38.34mm | terminal qpos=0.0978 | final=True
+[54/190] P00054.pkl OK | T=41 | type=03 | ΔXYZ max=33.06mm | terminal qpos=0.0978 | final=True
+[55/190] P00055.pkl OK | T=34 | type=03 | ΔXYZ max=29.60mm | terminal qpos=0.0978 | final=True
+[56/190] P00056.pkl OK | T=51 | type=03 | ΔXYZ max=35.11mm | terminal qpos=0.0978 | final=True
+[57/190] P00057.pkl OK | T=37 | type=03 | ΔXYZ max=36.28mm | terminal qpos=0.0978 | final=True
+[58/190] P00058.pkl OK | T=35 | type=03 | ΔXYZ max=30.59mm | terminal qpos=0.0978 | final=True
+[59/190] P00059.pkl OK | T=41 | type=03 | ΔXYZ max=48.91mm | terminal qpos=0.0978 | final=True
+[60/190] P00060.pkl OK | T=38 | type=03 | ΔXYZ max=36.41mm | terminal qpos=0.0978 | final=True
+[61/190] P00061.pkl OK | T=40 | type=03 | ΔXYZ max=29.07mm | terminal qpos=0.0978 | final=True
+[62/190] P00062.pkl OK | T=50 | type=03 | ΔXYZ max=33.49mm | terminal qpos=0.0978 | final=True
+[63/190] P00063.pkl OK | T=37 | type=03 | ΔXYZ max=35.19mm | terminal qpos=0.0978 | final=True
+[64/190] P00064.pkl OK | T=37 | type=03 | ΔXYZ max=28.61mm | terminal qpos=0.0978 | final=True
+[65/190] P00065.pkl OK | T=37 | type=03 | ΔXYZ max=31.42mm | terminal qpos=0.0978 | final=True
+[66/190] P00066.pkl OK | T=21 | type=04 | ΔXYZ max=34.49mm | terminal qpos=0.8802 | final=True
+[67/190] P00067.pkl OK | T=18 | type=04 | ΔXYZ max=34.54mm | terminal qpos=0.8802 | final=True
+[68/190] P00068.pkl OK | T=19 | type=04 | ΔXYZ max=36.31mm | terminal qpos=0.7859 | final=True
+[69/190] P00069.pkl OK | T=19 | type=04 | ΔXYZ max=28.92mm | terminal qpos=0.7859 | final=True
+[70/190] P00070.pkl OK | T=24 | type=04 | ΔXYZ max=31.64mm | terminal qpos=0.7859 | final=True
+[71/190] P00071.pkl OK | T=17 | type=04 | ΔXYZ max=38.44mm | terminal qpos=0.7859 | final=True
+[72/190] P00072.pkl OK | T=19 | type=04 | ΔXYZ max=27.68mm | terminal qpos=0.7859 | final=True
+[73/190] P00073.pkl OK | T=20 | type=04 | ΔXYZ max=34.09mm | terminal qpos=0.7859 | final=True
+[74/190] P00074.pkl OK | T=25 | type=04 | ΔXYZ max=32.55mm | terminal qpos=0.7859 | final=True
+[75/190] P00075.pkl OK | T=20 | type=04 | ΔXYZ max=34.44mm | terminal qpos=0.7859 | final=True
+[76/190] P00076.pkl OK | T=19 | type=04 | ΔXYZ max=60.23mm | terminal qpos=0.7859 | final=True
+[77/190] P00077.pkl OK | T=21 | type=04 | ΔXYZ max=105.82mm | terminal qpos=0.7859 | final=True
+[78/190] P00078.pkl OK | T=22 | type=04 | ΔXYZ max=35.09mm | terminal qpos=0.7859 | final=True
+[79/190] P00079.pkl OK | T=19 | type=04 | ΔXYZ max=28.24mm | terminal qpos=0.7859 | final=True
+[80/190] P00080.pkl OK | T=19 | type=04 | ΔXYZ max=31.92mm | terminal qpos=0.7859 | final=True
+[81/190] P00081.pkl OK | T=21 | type=04 | ΔXYZ max=28.67mm | terminal qpos=0.7894 | final=True
+[82/190] P00082.pkl OK | T=32 | type=05 | ΔXYZ max=29.63mm | terminal qpos=0.0978 | final=True
+[83/190] P00083.pkl OK | T=35 | type=05 | ΔXYZ max=32.47mm | terminal qpos=0.0978 | final=True
+[84/190] P00084.pkl OK | T=45 | type=05 | ΔXYZ max=35.35mm | terminal qpos=0.0978 | final=True
+[85/190] P00085.pkl OK | T=43 | type=05 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[86/190] P00086.pkl OK | T=46 | type=05 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[87/190] P00087.pkl OK | T=31 | type=05 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[88/190] P00088.pkl OK | T=38 | type=05 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[89/190] P00089.pkl OK | T=38 | type=05 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[90/190] P00090.pkl OK | T=44 | type=05 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[91/190] P00091.pkl OK | T=31 | type=05 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[92/190] P00092.pkl OK | T=30 | type=05 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[93/190] P00093.pkl OK | T=30 | type=05 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[94/190] P00094.pkl OK | T=45 | type=06 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[95/190] P00095.pkl OK | T=44 | type=06 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[96/190] P00096.pkl OK | T=35 | type=06 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[97/190] P00097.pkl OK | T=41 | type=06 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[98/190] P00098.pkl OK | T=40 | type=06 | ΔXYZ max=42.37mm | terminal qpos=0.0978 | final=True
+[99/190] P00099.pkl OK | T=37 | type=06 | ΔXYZ max=34.05mm | terminal qpos=0.0978 | final=True
+[100/190] P00100.pkl OK | T=39 | type=06 | ΔXYZ max=32.58mm | terminal qpos=0.0978 | final=True
+[101/190] P00101.pkl OK | T=39 | type=06 | ΔXYZ max=34.64mm | terminal qpos=0.0978 | final=True
+[102/190] P00102.pkl OK | T=46 | type=06 | ΔXYZ max=37.02mm | terminal qpos=0.0978 | final=True
+[103/190] P00103.pkl OK | T=47 | type=06 | ΔXYZ max=39.57mm | terminal qpos=0.0978 | final=True
+[104/190] P00104.pkl OK | T=48 | type=06 | ΔXYZ max=44.41mm | terminal qpos=0.0978 | final=True
+[105/190] P00105.pkl OK | T=50 | type=06 | ΔXYZ max=58.35mm | terminal qpos=0.0978 | final=True
+[106/190] P00106.pkl OK | T=36 | type=07 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[107/190] P00107.pkl OK | T=51 | type=07 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[108/190] P00108.pkl OK | T=40 | type=07 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[109/190] P00109.pkl OK | T=49 | type=07 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[110/190] P00110.pkl OK | T=36 | type=07 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[111/190] P00111.pkl OK | T=51 | type=07 | ΔXYZ max=33.34mm | terminal qpos=0.0978 | final=True
+[112/190] P00112.pkl OK | T=36 | type=07 | ΔXYZ max=37.00mm | terminal qpos=0.0978 | final=True
+[113/190] P00113.pkl OK | T=48 | type=07 | ΔXYZ max=32.95mm | terminal qpos=0.0978 | final=True
+[114/190] P00114.pkl OK | T=36 | type=07 | ΔXYZ max=31.51mm | terminal qpos=0.0978 | final=True
+[115/190] P00115.pkl OK | T=45 | type=07 | ΔXYZ max=34.43mm | terminal qpos=0.0978 | final=True
+[116/190] P00116.pkl OK | T=36 | type=07 | ΔXYZ max=32.28mm | terminal qpos=0.0978 | final=True
+[117/190] P00117.pkl OK | T=44 | type=07 | ΔXYZ max=35.34mm | terminal qpos=0.0978 | final=True
+[118/190] P00118.pkl OK | T=37 | type=07 | ΔXYZ max=33.83mm | terminal qpos=0.0978 | final=True
+[119/190] P00119.pkl OK | T=51 | type=07 | ΔXYZ max=34.27mm | terminal qpos=0.0978 | final=True
+[120/190] P00120.pkl OK | T=35 | type=07 | ΔXYZ max=42.73mm | terminal qpos=0.0978 | final=True
+[121/190] P00121.pkl OK | T=57 | type=07 | ΔXYZ max=32.78mm | terminal qpos=0.0978 | final=True
+[122/190] P00122.pkl OK | T=35 | type=07 | ΔXYZ max=34.01mm | terminal qpos=0.0978 | final=True
+[123/190] P00123.pkl OK | T=45 | type=07 | ΔXYZ max=47.45mm | terminal qpos=0.0978 | final=True
+[124/190] P00124.pkl OK | T=37 | type=07 | ΔXYZ max=65.83mm | terminal qpos=0.0978 | final=True
+[125/190] P00125.pkl OK | T=39 | type=07 | ΔXYZ max=48.61mm | terminal qpos=0.0978 | final=True
+[126/190] P00126.pkl OK | T=38 | type=07 | ΔXYZ max=306.36mm | terminal qpos=0.0978 | final=True
+[127/190] P00127.pkl OK | T=48 | type=07 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[128/190] P00128.pkl OK | T=37 | type=07 | ΔXYZ max=40.04mm | terminal qpos=0.0978 | final=True
+[129/190] P00129.pkl OK | T=40 | type=07 | ΔXYZ max=32.22mm | terminal qpos=0.0978 | final=True
+[130/190] P00130.pkl OK | T=39 | type=07 | ΔXYZ max=36.05mm | terminal qpos=0.0978 | final=True
+[131/190] P00131.pkl OK | T=45 | type=07 | ΔXYZ max=32.10mm | terminal qpos=0.0978 | final=True
+[132/190] P00132.pkl OK | T=34 | type=07 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[133/190] P00133.pkl OK | T=44 | type=07 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[134/190] P00134.pkl OK | T=49 | type=07 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[135/190] P00135.pkl OK | T=37 | type=07 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[136/190] P00136.pkl OK | T=41 | type=07 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[137/190] P00137.pkl OK | T=36 | type=07 | ΔXYZ max=37.24mm | terminal qpos=0.0978 | final=True
+[138/190] P00138.pkl OK | T=33 | type=08 | ΔXYZ max=36.88mm | terminal qpos=0.0978 | final=True
+[139/190] P00139.pkl OK | T=32 | type=08 | ΔXYZ max=35.02mm | terminal qpos=0.0978 | final=True
+[140/190] P00140.pkl OK | T=32 | type=08 | ΔXYZ max=41.99mm | terminal qpos=0.0978 | final=True
+[141/190] P00141.pkl OK | T=33 | type=08 | ΔXYZ max=40.51mm | terminal qpos=0.0978 | final=True
+[142/190] P00142.pkl OK | T=33 | type=08 | ΔXYZ max=43.40mm | terminal qpos=0.0978 | final=True
+[143/190] P00143.pkl OK | T=33 | type=08 | ΔXYZ max=39.69mm | terminal qpos=0.0978 | final=True
+[144/190] P00144.pkl OK | T=33 | type=08 | ΔXYZ max=32.81mm | terminal qpos=0.0978 | final=True
+[145/190] P00145.pkl OK | T=32 | type=08 | ΔXYZ max=314.13mm | terminal qpos=0.0978 | final=True
+[146/190] P00146.pkl OK | T=33 | type=08 | ΔXYZ max=54.12mm | terminal qpos=0.0978 | final=True
+[147/190] P00147.pkl OK | T=33 | type=08 | ΔXYZ max=34.18mm | terminal qpos=0.0978 | final=True
+[148/190] P00148.pkl OK | T=32 | type=08 | ΔXYZ max=33.28mm | terminal qpos=0.0978 | final=True
+[149/190] P00149.pkl OK | T=32 | type=08 | ΔXYZ max=37.95mm | terminal qpos=0.0978 | final=True
+[150/190] P00150.pkl OK | T=32 | type=08 | ΔXYZ max=34.59mm | terminal qpos=0.0978 | final=True
+[151/190] P00151.pkl OK | T=32 | type=08 | ΔXYZ max=35.96mm | terminal qpos=0.0978 | final=True
+[152/190] P00152.pkl OK | T=32 | type=08 | ΔXYZ max=35.83mm | terminal qpos=0.0978 | final=True
+[153/190] P00153.pkl OK | T=33 | type=08 | ΔXYZ max=32.22mm | terminal qpos=0.0978 | final=True
+[154/190] P00154.pkl OK | T=33 | type=08 | ΔXYZ max=40.16mm | terminal qpos=0.0978 | final=True
+[155/190] P00155.pkl OK | T=33 | type=08 | ΔXYZ max=31.13mm | terminal qpos=0.0978 | final=True
+[156/190] P00156.pkl OK | T=33 | type=08 | ΔXYZ max=34.46mm | terminal qpos=0.0978 | final=True
+[157/190] P00157.pkl OK | T=32 | type=08 | ΔXYZ max=39.43mm | terminal qpos=0.0978 | final=True
+[158/190] P00158.pkl OK | T=32 | type=08 | ΔXYZ max=33.89mm | terminal qpos=0.0978 | final=True
+[159/190] P00159.pkl OK | T=32 | type=08 | ΔXYZ max=37.71mm | terminal qpos=0.0978 | final=True
+[160/190] P00160.pkl OK | T=34 | type=09 | ΔXYZ max=46.47mm | terminal qpos=0.0978 | final=True
+[161/190] P00161.pkl OK | T=37 | type=09 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[162/190] P00162.pkl OK | T=35 | type=09 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[163/190] P00163.pkl OK | T=32 | type=09 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[164/190] P00164.pkl OK | T=35 | type=09 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[165/190] P00165.pkl OK | T=38 | type=09 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[166/190] P00166.pkl OK | T=34 | type=09 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[167/190] P00167.pkl OK | T=32 | type=09 | ΔXYZ max=37.45mm | terminal qpos=0.0978 | final=True
+[168/190] P00168.pkl OK | T=35 | type=09 | ΔXYZ max=32.51mm | terminal qpos=0.0978 | final=True
+[169/190] P00169.pkl OK | T=38 | type=09 | ΔXYZ max=31.47mm | terminal qpos=0.0978 | final=True
+[170/190] P00170.pkl OK | T=36 | type=09 | ΔXYZ max=32.68mm | terminal qpos=0.0978 | final=True
+[171/190] P00171.pkl OK | T=35 | type=09 | ΔXYZ max=30.48mm | terminal qpos=0.0978 | final=True
+[172/190] P00172.pkl OK | T=41 | type=09 | ΔXYZ max=31.56mm | terminal qpos=0.0978 | final=True
+[173/190] P00173.pkl OK | T=41 | type=09 | ΔXYZ max=35.85mm | terminal qpos=0.0978 | final=True
+[174/190] P00174.pkl OK | T=35 | type=09 | ΔXYZ max=31.66mm | terminal qpos=0.0978 | final=True
+[175/190] P00175.pkl OK | T=35 | type=09 | ΔXYZ max=34.13mm | terminal qpos=0.0978 | final=True
+[176/190] P00176.pkl OK | T=35 | type=09 | ΔXYZ max=30.52mm | terminal qpos=0.0978 | final=True
+[177/190] P00177.pkl OK | T=37 | type=09 | ΔXYZ max=34.07mm | terminal qpos=0.0978 | final=True
+[178/190] P00178.pkl OK | T=37 | type=09 | ΔXYZ max=34.03mm | terminal qpos=0.0978 | final=True
+[179/190] P00179.pkl OK | T=45 | type=09 | ΔXYZ max=34.20mm | terminal qpos=0.0978 | final=True
+[180/190] P00180.pkl OK | T=34 | type=09 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[181/190] P00181.pkl OK | T=34 | type=09 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[182/190] P00182.pkl OK | T=34 | type=09 | ΔXYZ max=0.00mm | terminal qpos=0.0978 | final=True
+[183/190] P00183.pkl OK | T=33 | type=09 | ΔXYZ max=31.85mm | terminal qpos=0.0978 | final=True
+[184/190] P00184.pkl OK | T=37 | type=09 | ΔXYZ max=34.65mm | terminal qpos=0.0978 | final=True
+[185/190] P00185.pkl OK | T=34 | type=09 | ΔXYZ max=33.74mm | terminal qpos=0.0978 | final=True
+[186/190] P00186.pkl OK | T=36 | type=09 | ΔXYZ max=39.65mm | terminal qpos=0.0978 | final=True
+[187/190] P00187.pkl OK | T=38 | type=09 | ΔXYZ max=32.61mm | terminal qpos=0.0978 | final=True
+[188/190] P00188.pkl OK | T=32 | type=09 | ΔXYZ max=31.31mm | terminal qpos=0.0978 | final=True
+[189/190] P00189.pkl OK | T=37 | type=09 | ΔXYZ max=37.21mm | terminal qpos=0.0978 | final=True
+[190/190] P00190.pkl OK | T=34 | type=09 | ΔXYZ max=37.07mm | terminal qpos=0.0978 | final=True
+
+== RIEPILOGO ==
+{
+  "source": "/mnt/beegfs/a.cuciniello9/datasets/robotic/plays_trajectories",
+  "legacy_root": "/mnt/beegfs/a.cuciniello9/datasets/robotic/plays_preprocessed",
+  "discovered": 190,
+  "analyzed": 190,
+  "ok": 190,
+  "errors": 0,
+  "total_frames": 7052,
+  "per_play_type": {
+    "02": 33,
+    "03": 32,
+    "04": 16,
+    "05": 12,
+    "06": 12,
+    "07": 32,
+    "08": 22,
+    "09": 31
+  },
+  "operator_success_false": 0,
+  "operator_approved_false": 0,
+  "missing_final_observation": 0,
+  "static_eef": 48,
+  "xyz_jump_gt_100mm": 4,
+  "nonincreasing_timestamp_episodes": 0,
+  "gripper_event_counts": {
+    "close": 190,
+    "open": 870
+  },
+  "legacy_checks": {
+    "prompt_windows_frames_MATCH": 190
+  }
+}
+
+GRIPPER (test statistico su episodi):
+  threshold=0.15: TP=190 FP=0 FN=0 TN=0 | open_edges=174 | terminal_open=174
+  threshold=0.18: TP=190 FP=0 FN=0 TN=0 | open_edges=174 | terminal_open=174
+  threshold=0.20: TP=190 FP=0 FN=0 TN=0 | open_edges=174 | terminal_open=174
+  threshold=0.25: TP=190 FP=0 FN=0 TN=0 | open_edges=174 | terminal_open=174
+  threshold=0.30: TP=190 FP=0 FN=0 TN=0 | open_edges=174 | terminal_open=174
+  threshold=0.35: TP=190 FP=0 FN=0 TN=0 | open_edges=174 | terminal_open=174
+  threshold=0.38: TP=190 FP=0 FN=0 TN=0 | open_edges=174 | terminal_open=174
+  threshold=0.40: TP=190 FP=0 FN=0 TN=0 | open_edges=174 | terminal_open=174
+  threshold=0.42: TP=173 FP=0 FN=17 TN=0 | open_edges=157 | terminal_open=174
+  threshold=0.45: TP=85 FP=0 FN=105 TN=0 | open_edges=69 | terminal_open=174
+
+Report in /mnt/beegfs/a.cuciniello9/datasets/robotic/plays_original_audit; originale mai modificato.
